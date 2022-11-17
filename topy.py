@@ -81,6 +81,7 @@ def display(routingTable):
         # Display the routing table with NON-Infinity cost links
         if routingTable[item]['cost'] != 'inf':
             myTable.add_row([item, routingTable[item]['nexthop'], routingTable[item]['cost']])
+    myTable.sortby = "ID"        
     print(myTable)
 
 
