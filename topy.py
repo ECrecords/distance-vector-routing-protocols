@@ -1,6 +1,6 @@
 from prettytable import PrettyTable
 from collections import namedtuple
-import sys
+import sys, traceback
 import socket
 import selectors
 
@@ -103,11 +103,11 @@ def server():
 
     # Throw an error for invalid server function usages.
     except ValueError:
-        print("""
+        print(f"""
 
-Error: Invalid Server command usage.
+Error: '{' '.join(command)}'. Invalid command usage.
 
-usage: server [-t FILE_NAME] [-i TIME_INTERVAL]
+Usage: server [-t FILE_NAME] [-i TIME_INTERVAL]
 
 Distance Vector Protocol
 
@@ -137,6 +137,39 @@ def send_message():
 def recv_message():
     pass
 
+
+# wrappper used to hold the selection menu of the chat applciation
+def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str):
+
+    # reads input from stdin and strips whitespaces
+    input = (sys.stdin.readline()).rstrip()
+
+    # catch error to prevent app crash
+    try:
+        # splits the string by " " so addtional input arguments can be read.
+        input = input.split(" ")
+        if input[0] == "help":
+            pass
+        elif input[0] == "myip":
+            print(f"The IP address is {get_ip()}")
+        elif input[0] == "display":
+            display(routingTable)
+        elif input[0] == "update":
+            if input[1] != thisServerID:
+                print(f"Error: \'{input}\'. This server's ID is {thisServerID}")
+            else:
+                dstServerID = input[2]
+                cost = input[3]
+                routingTable[dstServerID]['cost']=cost
+        elif input[0] == "exit":
+            sys.exit("Goodbye")
+        else:
+            print(  "invalid command: use command "
+                    "help to display valid commands" )
+    except IndexError:
+        print(  "invalid usage: use command "
+                "help to display valid usage")
+
 # main function
 def main():
     try:
@@ -152,11 +185,36 @@ def main():
 
         # Use topology information above to initilize routing table
         routingTable = createRouteTable(servers, neighbors, thisID)
-
+        
         # display routing table
         display(routingTable)
+    
+        # using selector to read STDIN
+        sel = selectors.DefaultSelector()
+        sel.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
         
+        while True:
+
+            print(">>", end=" ")
+            sys.stdout.flush()
+            event = sel.select(timeout=None)
+
+            for key, mask in event:
+                
+                if key.data == "STDIN":
+                    menu(sel, routingTable, thisID)
+                else:
+                    if key.data is None:
+                        pass
+                    else:
+                        pass
+                        
+    except SystemExit as message:
+        print(message)
+
+
     except:
+        traceback.print_exc()
         sys.exit()
         
     
