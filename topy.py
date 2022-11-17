@@ -1,3 +1,4 @@
+from prettytable import PrettyTable
 from collections import namedtuple
 import sys
 import socket
@@ -23,11 +24,97 @@ def get_port(sock: socket.socket) -> int:
     finally:
         return port
 
-def init_route_table():
-    pass
+# Read Topology File to create a list of Servers in the network and this server's neighbors
+def readTopFile(file_name):
+    
+    # Open Topology file and read each line
+    with open(file_name, 'r') as file:
+        topology = file.read().splitlines()
+    
+    # number of servers and neighbors
+    n_servers = int(topology[0])
+    n_neighbors = int(topology[1])
 
-def disp_route_table():
-    pass
+    # list of servers and neighbors
+    servers = [row for row in topology[2:2+n_servers]]
+    neighbors = [row for row in topology[2+n_servers:2+n_servers+n_neighbors]]
+
+    # This server's ID
+    thisID = neighbors[0].split(" ")[0]
+
+    # return the lists and this server's ID
+    return servers, neighbors, thisID
+
+
+# Create Initial routing Table
+def createRouteTable(servers, neighbors, thisID):
+    # Using Python Dictionary
+    routingTable = {}
+
+    # neighbor ID and the cost is pulled from neighbors information 
+    neighborIDs = { i.split(" ")[1]:i.split(" ")[2]  for i in neighbors }
+
+    # server IDs from the topology
+    serverIDs = [ i.split(" ")[0] for i in servers ] 
+
+    
+    for serverID in serverIDs:
+        if serverID in neighborIDs.keys():
+            nexthop = serverID
+            cost = neighborIDs[serverID]
+            # add neighbor servers with cost to the routing table
+            routingTable[serverID] = {'nexthop': nexthop, 'cost': cost}
+        else:
+            # add non-neighbor servers with 'Infinity" cost to the routing table
+            routingTable[serverID] = {'nexthop': 'n.a', 'cost': 'inf'}
+    
+    # add this server to this server cost to the routing table
+    routingTable[thisID] = {'nexthop': thisID, 'cost': '0'}
+
+    return routingTable
+
+
+# display the routing table of this server
+def display(routingTable):
+    myTable = PrettyTable(["ID", "Next Hop", "Cost"])
+    for item in routingTable:
+        # Display the routing table with NON-Infinity cost links
+        if routingTable[item]['cost'] != 'inf':
+            myTable.add_row([item, routingTable[item]['nexthop'], routingTable[item]['cost']])
+    print(myTable)
+
+
+# Initial server function to get topology filename and updating time interval value
+def server():
+    try:
+        # Receiver server command 
+        command = list(map(str, input("Start with \'server\' command: usage: server [-t FILE_NAME] [-i TIME_INTERVAL]\n>> ").split(" ")))
+        
+        # Validate the command and Raise error if server command is not properly used
+        if len(command) != 5 or command[0] != 'server' or command[1] != '-t' or command[3] != '-i':
+            raise ValueError()
+        
+        else:
+            # Get file name and time interval
+            file_name = command[2]
+            time_interval = int(command[4])
+            
+            return file_name, time_interval
+
+    # Throw an error for invalid server function usages.
+    except ValueError:
+        print("""
+
+Error: Invalid Server command usage.
+
+usage: server [-t FILE_NAME] [-i TIME_INTERVAL]
+
+Distance Vector Protocol
+
+options:
+  -t FILE_NAME      Name of the topology file (ex: -t topology.txt)
+  -i TIME_INTERVAL  Time interval between routing updates in seconds (ex: -i 30)
+""")
 
 def packets():
     pass
@@ -50,9 +137,28 @@ def send_message():
 def recv_message():
     pass
 
+# main function
 def main():
-    print(f"\nHello World from {get_ip()}\n")
-    
+    try:
+        # Program starts with calling server function
+        file_name, time_interval = server()
+        
+        # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
+        servers, neighbors, thisID = readTopFile(file_name)
+
+        # Print this server's IP and ID
+        print(f"\nHello World from {get_ip()}\n")
+        print(f"This server's ID is {thisID}\n")
+
+        # Use topology information above to initilize routing table
+        routingTable = createRouteTable(servers, neighbors, thisID)
+
+        # display routing table
+        display(routingTable)
+        
+    except:
+        sys.exit()
+        
     
 if __name__ == "__main__":
     main()
