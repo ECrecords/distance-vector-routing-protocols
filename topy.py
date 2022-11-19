@@ -86,10 +86,10 @@ def display(routingTable):
 
 
 # Initial server function to get topology filename and updating time interval value
-def server():
+def server(command: str):
     try:
         # Receiver server command 
-        command = list(map(str, input("Start with \'server\' command: usage: server [-t FILE_NAME] [-i TIME_INTERVAL]\n>> ").split(" ")))
+        #command = list(map(str, input("Start with \'server\' command: usage: server [-t FILE_NAME] [-i TIME_INTERVAL]\n>> ").split(" ")))
         
         # Validate the command and Raise error if server command is not properly used
         if len(command) != 5 or command[0] != 'server' or command[1] != '-t' or command[3] != '-i':
@@ -140,60 +140,83 @@ def recv_message():
 
 
 # wrappper used to hold the selection menu of the chat applciation
-def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str):
+def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str, time_interval: int):
 
     # reads input from stdin and strips whitespaces
     input = (sys.stdin.readline()).rstrip()
+    
+    # splits the string by " " so addtional input arguments can be read.
+    input = input.split(" ")
 
-    # catch error to prevent app crash
-    try:
-        # splits the string by " " so addtional input arguments can be read.
-        input = input.split(" ")
-        if input[0] == "help":
-            pass
-        elif input[0] == "myip":
-            print(f"The IP address is {get_ip()}")
-        elif input[0] == "display":
-            display(routingTable)
-        elif input[0] == "update":
-            if input[1] != thisServerID:
-                print(f"Error: \'{input}\'. This server's ID is {thisServerID}")
-            else:
-                dstServerID = input[2]
-                cost = input[3]
-                routingTable[dstServerID]['cost']=cost
-        elif input[0] == "exit":
-            sys.exit("Goodbye")
+    if "server" in input[0]:
+        if routingTable is not None:
+            print("'server' command can only be used at startup")
         else:
-            print(  "invalid command: use command "
-                    "help to display valid commands" )
-    except IndexError:
-        print(  "invalid usage: use command "
-                "help to display valid usage")
+            # Program starts with calling server function
+            file_name, time_interval = server(input)
+            # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
+            servers, neighbors, thisID = readTopFile(file_name)
+            # Print this server's IP and ID
+            print(f"This server's ID is {thisID}\n")
+            # Use topology information above to initilize routing table
+            routingTable = createRouteTable(servers, neighbors, thisID)
+            # display routing table
+            display(routingTable)
+
+    elif "update" in input[0] and routingTable is not None:
+        print('TODO') #TODO
+
+    elif "step" in input[0] and routingTable is not None:
+        print('TODO') #TODO
+
+    elif "packets" in input[0] and routingTable is not None:
+        print('TODO') #TODO
+
+    elif "display" in input[0] and routingTable is not None:
+        # display routing table
+        display(routingTable)
+    
+    elif "exit" in input[0] and routingTable is not None:
+        #TODO exit program correctly
+        exit()
+
+    elif routingTable is not None:
+        print(f"'{input[0]}' is a invalid command")
+
+    elif routingTable is None:
+        print("use the 'server' command to initalize the server")
+
+    else:
+        print("error occured")
+
+    return routingTable, time_interval
 
 # main function
 def main():
     try:
-        # Program starts with calling server function
-        file_name, time_interval = server()
+        print(f"\nHello World from {get_ip()}\n")
         
-        # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
-        servers, neighbors, thisID = readTopFile(file_name)
+        
+        # # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
+        # servers, neighbors, thisID = readTopFile(file_name)
 
         # Print this server's IP and ID
-        print(f"\nHello World from {get_ip()}\n")
-        print(f"This server's ID is {thisID}\n")
+        #print(f"This server's ID is {thisID}\n")
 
-        # Use topology information above to initilize routing table
-        routingTable = createRouteTable(servers, neighbors, thisID)
+        # # Use topology information above to initilize routing table
+        # routingTable = createRouteTable(servers, neighbors, thisID)
         
-        # display routing table
-        display(routingTable)
+        # # display routing table
+        # display(routingTable)
     
         # using selector to read STDIN
         sel = selectors.DefaultSelector()
         sel.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
         
+        routingTable = None
+        time_interval = None
+        thisID = None
+
         while True:
 
             print(">>", end=" ")
@@ -203,7 +226,7 @@ def main():
             for key, mask in event:
                 
                 if key.data == "STDIN":
-                    menu(sel, routingTable, thisID)
+                    routingTable, time_interval = menu(sel, routingTable, thisID, time_interval)
                 else:
                     if key.data is None:
                         pass
