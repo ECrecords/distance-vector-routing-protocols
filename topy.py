@@ -139,6 +139,20 @@ def recv_message():
     pass
 
 
+def print_commands() -> None:
+    print(
+f"""
+Commands:
+
+server -t <topology-file-name> -i <routing-update-interval>
+update <server-ID1> <server-ID2> <link-cost>
+step
+packets
+display
+disable <server-ID>
+crash
+exit\n""")
+
 # wrappper used to hold the selection menu of the chat applciation
 def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str, time_interval: int):
 
@@ -176,12 +190,20 @@ def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str, ti
         # display routing table
         display(routingTable)
     
-    elif "exit" in input[0] and routingTable is not None:
+    elif "disable" in input[0] and routingTable is not None:
+        #TODO exit program correctly
+        pass
+
+    elif "crash" in input[0] and routingTable is not None:
+        #TODO exit program correctly
+        pass
+
+    elif "exit" in input[0]:
         #TODO exit program correctly
         exit()
 
     elif routingTable is not None:
-        print(f"'{input[0]}' is a invalid command")
+        print(f"'{' '.join(input)}' is a invalid command")
 
     elif routingTable is None:
         print("use the 'server' command to initalize the server")
@@ -194,8 +216,10 @@ def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str, ti
 # main function
 def main():
     try:
-        print(f"\nHello World from {get_ip()}\n")
-        
+        print(f"""
+Distance Vector Protocol ({get_ip()})
+-------------------------------------------------------------""")
+        print_commands()
         
         # # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
         # servers, neighbors, thisID = readTopFile(file_name)
