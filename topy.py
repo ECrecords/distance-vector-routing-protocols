@@ -156,23 +156,27 @@ def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str, ti
             file_name, time_interval = server(input)
             # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
             servers, neighbors, thisID = readTopFile(file_name)
+            # Print this server's IP and ID
+            print(f"This server's ID is {thisID}\n")
             # Use topology information above to initilize routing table
             routingTable = createRouteTable(servers, neighbors, thisID)
             # display routing table
             display(routingTable)
 
-    elif "update" in input[0]:
-        print('TODO') #TODO
-    elif "step" in input[0]:
-        print('TODO') #TODO
-    elif "packets" in input[0]:
+    elif "update" in input[0] and routingTable is not None:
         print('TODO') #TODO
 
-    elif "display" in input[0]:
+    elif "step" in input[0] and routingTable is not None:
+        print('TODO') #TODO
+
+    elif "packets" in input[0] and routingTable is not None:
+        print('TODO') #TODO
+
+    elif "display" in input[0] and routingTable is not None:
         # display routing table
         display(routingTable)
     
-    elif "exit" in input[0]:
+    elif "exit" in input[0] and routingTable is not None:
         #TODO exit program correctly
         exit()
 
