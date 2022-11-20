@@ -23,5 +23,5 @@
  - Jacob:
  - Cho: Server, Read Topology files, Initialize Routing Table, Menu, Update
  - Hao:
- - Elvis:
+ - Elvis: Menu, Send Message, Receive Message
  
