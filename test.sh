@@ -19,7 +19,12 @@ WHITE='\033[1;37m'
 
 PYTHON_SCRIPT=topy.py
 TOP_FILE_DIR=top_files/
-INPUT_FILE=test.in
+
+TEST_DIR=test_files/
+INPUT_FILE="${TEST_DIR}commands.in"
+OUTPUT_FILE="${TEST_DIR}rountime.out"
+ERROR_FILE="${TEST_DIR}rountime.err"
+
 SERVER1="35.165.134.136"
 S1_TOPFILE="${TOP_FILE_DIR}server1.top"
 
@@ -51,6 +56,10 @@ else
         exit 1
 fi
 
+if [ ! -d $TEST_DIR ]; then
+	mkdir $TEST_DIR
+fi
+
 # checks if test.in exits to delete
 if [ -f "$INPUT_FILE" ]; then
         echo "${RED}'${INPUT_FILE}' found... deleting"
@@ -77,6 +86,9 @@ elif [ $ext_ip = $SERVER3 ]; then
 elif [ $ext_ip = $SERVER4 ]; then
         echo "${YELLOW}will run test as server 4 using ${ext_ip}"
         top_file=$S4_TOPFILE
+else
+	echo "${RED}not running on an defined AWS EC2 instance... exiting"
+	exit 1
 fi
 
 
@@ -88,10 +100,50 @@ echo "update" >> $INPUT_FILE
 echo "display" >> $INPUT_FILE 
 echo "exit" >> $INPUT_FILE
 echo "${GREEN}test generated"
-echo "${YELLOW}use 'python3 topy.py < test.in' to conduct test"
 echo "\n${LIGHTCYAN}'${INPUT_FILE}' contents"
 echo "${WHITE}---------------------------"
 cat $INPUT_FILE
 
-echo "${RED}not running on an defined AWS EC2 instance... exiting"
-exit 1
+echo "\n${YELLOW}do you wish to run test? [y/n]"
+flag=0
+while [ $flag -ge 0 ]
+do
+
+	read usr_input
+	if [ ${usr_input:-1} = "n" ]; then
+		echo "${YELLOW}use 'cat ${INPUT_FILE} | python3 ${PYTHON_SCRIPT} < test.in' to conduct test"
+		exit 1
+	elif [ ${usr_input:-1} = "y" ]; then
+		echo "${GREEN}running test...${YELLOW}\n"
+		flag=-1
+	else
+		echo "${RED}invalid option"
+	fi
+done
+
+cat $INPUT_FILE | python3 -u $PYTHON_SCRIPT > ${OUTPUT_FILE} 2> ${ERROR_FILE}
+
+if [ -s runtime.err ]; then
+	echo "${RED} error have occured during execution"	
+	echo "${YELLOW} check ${ERROR_FILE}"
+else
+	rm $ERROR_FILE
+fi	
+
+echo "${GREEN}test output located in ${OUTPUT_FILE}"
+
+echo "${YELLOW}do you wish to see the output? [y/n]${WHITE}"
+flag=0
+while [ $flag -ge 0 ]
+do
+
+	read usr_input
+	if [ ${usr_input:-1} = "n" ]; then
+		exit 0
+	elif [ ${usr_input:-1} = "y" ]; then
+		cat ${OUTPUT_FILE}
+		exit 0
+	else
+		echo "${RED}invalid option"
+	fi
+done
