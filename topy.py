@@ -154,20 +154,17 @@ crash
 exit\n""")
 
 # wrappper used to hold the selection menu of the chat applciation
-def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str, time_interval: int):
-
-    # reads input from stdin and strips whitespaces
-    input = (sys.stdin.readline()).rstrip()
+def menu(usr_input: str, routingTable, thisServerID:str, time_interval: int):
     
-    # splits the string by " " so addtional input arguments can be read.
-    input = input.split(" ")
+    # splits the string by " " so addtional usr_input arguments can be read.
+    usr_input = usr_input.split(" ")
 
-    if "server" in input[0]:
+    if "server" in usr_input[0]:
         if routingTable is not None:
             print("'server' command can only be used at startup")
         else:
             # Program starts with calling server function
-            file_name, time_interval = server(input)
+            file_name, time_interval = server(usr_input)
             # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
             servers, neighbors, thisID = readTopFile(file_name)
             # Print this server's IP and ID
@@ -177,33 +174,33 @@ def menu(selector: selectors.DefaultSelector, routingTable, thisServerID:str, ti
             # display routing table
             display(routingTable)
 
-    elif "update" in input[0] and routingTable is not None:
+    elif "update" in usr_input[0] and routingTable is not None:
         print('TODO') #TODO
 
-    elif "step" in input[0] and routingTable is not None:
+    elif "step" in usr_input[0] and routingTable is not None:
         print('TODO') #TODO
 
-    elif "packets" in input[0] and routingTable is not None:
+    elif "packets" in usr_input[0] and routingTable is not None:
         print('TODO') #TODO
 
-    elif "display" in input[0] and routingTable is not None:
+    elif "display" in usr_input[0] and routingTable is not None:
         # display routing table
         display(routingTable)
     
-    elif "disable" in input[0] and routingTable is not None:
+    elif "disable" in usr_input[0] and routingTable is not None:
         #TODO exit program correctly
         pass
 
-    elif "crash" in input[0] and routingTable is not None:
+    elif "crash" in usr_input[0] and routingTable is not None:
         #TODO exit program correctly
         pass
 
-    elif "exit" in input[0]:
+    elif "exit" in usr_input[0]:
         #TODO exit program correctly
         exit()
 
     elif routingTable is not None:
-        print(f"'{' '.join(input)}' is a invalid command")
+        print(f"'{' '.join(usr_input)}' is a invalid command")
 
     elif routingTable is None:
         print("use the 'server' command to initalize the server")
@@ -244,13 +241,15 @@ Distance Vector Protocol ({get_ip()})
         while True:
 
             print(">>", end=" ")
-            sys.stdout.flush()
             event = sel.select(timeout=None)
 
             for key, mask in event:
                 
                 if key.data == "STDIN":
-                    routingTable, time_interval = menu(sel, routingTable, thisID, time_interval)
+                    usr_input = (sys.stdin.readline()).strip()
+                    if input:
+                        # reads input from stdin and strips whitespaces
+                        routingTable, time_interval = menu(usr_input, routingTable, thisID, time_interval)
                 else:
                     if key.data is None:
                         pass
