@@ -1,3 +1,4 @@
+from os import stat
 from prettytable import PrettyTable
 from collections import namedtuple
 import sys, traceback
@@ -13,6 +14,7 @@ from requests import get
 # used to hold needed data & structures 
 class Server_State:
     def __init__(self):
+        self.selector           = None
         self.id                 = None
         self.ip                 = None
         self.port               = None
@@ -185,7 +187,7 @@ def menu(usr_input: str, state: Server_State) -> None:
             # Use topology information above to initilize routing table
             state.routing_table = createRouteTable(state.servers, state.neighbors, state.id)
 
-            # wrapper used to initiate the listen socket
+            # wrapper used to initiate the listening socket
             #init_listr()
             # display routing table
             display(state.routing_table)
@@ -232,29 +234,17 @@ Distance Vector Protocol ({get_ip()})
 -------------------------------------------------------------""")
         print_commands()
         
-        # # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
-        # servers, neighbors, thisID = readTopFile(file_name)
-
-        # Print this server's IP and ID
-        #print(f"This server's ID is {thisID}\n")
-
-        # # Use topology information above to initilize routing table
-        # routingTable = createRouteTable(servers, neighbors, thisID)
-        
-        # # display routing table
-        # display(routingTable)
-    
-        # using selector to read STDIN
-        sel = selectors.DefaultSelector()
-        sel.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
-        
         # delcare and init server state
         state = Server_State()
+
+        # using selector to read STDIN
+        state.selector = selectors.DefaultSelector()
+        state.selector.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
 
         while True:
 
             print(">>", end=" ")
-            event = sel.select(timeout=None)
+            event = state.selector.select(timeout=None)
 
             for key, mask in event:
                 
