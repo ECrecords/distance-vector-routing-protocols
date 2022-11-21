@@ -10,6 +10,19 @@ from requests import get
 # used for updating routing table periodicly
 #import schedule 
 
+# used to hold needed data & structures 
+class Server_State:
+    def __init__(self):
+        self.id                 = None
+        self.ip                 = None
+        self.port               = None
+        self.timeout_interval   = None
+        self.routing_table      = None
+        self.servers            = None
+        self.neighbors          = None
+        
+
+
 # used to get public ip
 def get_ip() -> str:
     return get('https://api.ipify.org').content.decode('utf8')
@@ -154,44 +167,47 @@ crash
 exit\n""")
 
 # wrappper used to hold the selection menu of the chat applciation
-def menu(usr_input: str, routingTable, thisServerID:str, time_interval: int):
+def menu(usr_input: str, state: Server_State) -> None:
     
     # splits the string by " " so addtional usr_input arguments can be read.
     usr_input = usr_input.split(" ")
 
     if "server" in usr_input[0]:
-        if routingTable is not None:
+        if state.routing_table is not None:
             print("'server' command can only be used at startup")
         else:
             # Program starts with calling server function
-            file_name, time_interval = server(usr_input)
+            file_name, state.timeout_interval = server(usr_input)
             # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
-            servers, neighbors, thisID = readTopFile(file_name)
+            state.servers, state.neighbors, state.id = readTopFile(file_name)
             # Print this server's IP and ID
-            print(f"This server's ID is {thisID}\n")
+            print(f"This server's ID is {state.id}\n")
             # Use topology information above to initilize routing table
-            routingTable = createRouteTable(servers, neighbors, thisID)
+            state.routing_table = createRouteTable(state.servers, state.neighbors, state.id)
+
+            # wrapper used to initiate the listen socket
+            #init_listr()
             # display routing table
-            display(routingTable)
+            display(state.routing_table)
 
-    elif "update" in usr_input[0] and routingTable is not None:
+    elif "update" in usr_input[0] and state.routing_table is not None:
         print('TODO') #TODO
 
-    elif "step" in usr_input[0] and routingTable is not None:
+    elif "step" in usr_input[0] and state.routing_table is not None:
         print('TODO') #TODO
 
-    elif "packets" in usr_input[0] and routingTable is not None:
+    elif "packets" in usr_input[0] and state.routing_table is not None:
         print('TODO') #TODO
 
-    elif "display" in usr_input[0] and routingTable is not None:
+    elif "display" in usr_input[0] and state.routing_table is not None:
         # display routing table
-        display(routingTable)
+        display(state.routing_table)
     
-    elif "disable" in usr_input[0] and routingTable is not None:
+    elif "disable" in usr_input[0] and state.routing_table is not None:
         #TODO exit program correctly
         pass
 
-    elif "crash" in usr_input[0] and routingTable is not None:
+    elif "crash" in usr_input[0] and state.routing_table is not None:
         #TODO exit program correctly
         pass
 
@@ -199,16 +215,14 @@ def menu(usr_input: str, routingTable, thisServerID:str, time_interval: int):
         #TODO exit program correctly
         exit()
 
-    elif routingTable is not None:
+    elif state.routing_table is not None:
         print(f"'{' '.join(usr_input)}' is a invalid command")
 
-    elif routingTable is None:
+    elif state.routing_table is None:
         print("use the 'server' command to initalize the server")
 
     else:
         print("error occured")
-
-    return routingTable, time_interval
 
 # main function
 def main():
@@ -234,9 +248,8 @@ Distance Vector Protocol ({get_ip()})
         sel = selectors.DefaultSelector()
         sel.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
         
-        routingTable = None
-        time_interval = None
-        thisID = None
+        # delcare and init server state
+        state = Server_State()
 
         while True:
 
@@ -249,7 +262,7 @@ Distance Vector Protocol ({get_ip()})
                     usr_input = (sys.stdin.readline()).strip()
                     if usr_input:
                         # reads input from stdin and strips whitespaces
-                        routingTable, time_interval = menu(usr_input, routingTable, thisID, time_interval)
+                        menu(usr_input, state)
                 else:
                     if key.data is None:
                         pass
