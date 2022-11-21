@@ -247,7 +247,7 @@ Distance Vector Protocol ({get_ip()})
                 
                 if key.data == "STDIN":
                     usr_input = (sys.stdin.readline()).strip()
-                    if input:
+                    if usr_input:
                         # reads input from stdin and strips whitespaces
                         routingTable, time_interval = menu(usr_input, routingTable, thisID, time_interval)
                 else:
