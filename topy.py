@@ -152,6 +152,7 @@ def send_message():
     pass
 
 # this will be called upon reciving a message
+# TODO this method will be used to rebuild the json file.
 def recv_message(state: Server_State, sock: socket.socket):
     message = sock.recv(1000)
     if message:
