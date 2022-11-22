@@ -154,6 +154,18 @@ def send_message():
 def recv_message():
     pass
 
+def handle_connection(state: Server_State, sock: socket.socket) -> None:
+    #TODO error handling
+
+    # accepts incomming connection 
+    # and set it to non-blocking
+    conn, addr = sock.accept()
+    conn.setblocking(False)
+
+    # register connection to selector and
+    # define it callback funtion as recv_message
+    state.sel.register(conn, selectors.EVENT_READ, recv_message)
+
 def clean_up(state: Server_State) -> None:
 
     # unregister STDIN from selector
@@ -188,7 +200,8 @@ def init_listr(state: Server_State) -> None:
         listener.setblocking(False)
         
         # register listening socket to state selector
-        state.sel.register(listener, selectors.EVENT_READ, data=None)
+        # set its callback funtion to handle_connection
+        state.sel.register(listener, selectors.EVENT_READ, data=handle_connection)
     
     
 
@@ -282,7 +295,7 @@ Distance Vector Protocol ({get_ip()})
 
         # using selector to read STDIN
         state.sel = selectors.DefaultSelector()
-        state.sel.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
+        state.sel.register(sys.stdin, selectors.EVENT_READ)
 
         while True:
 
@@ -290,17 +303,19 @@ Distance Vector Protocol ({get_ip()})
             event = state.sel.select(timeout=None)
 
             for key, mask in event:
-                
-                if key.data == "STDIN":
+                if key.fileobj == sys.stdin.fileno():
+
+                    # reads input from stdin and strips whitespaces
                     usr_input = (sys.stdin.readline()).strip()
+
+                    # ignore if string is empty 
+                    # otherwise call menu with usr input
                     if usr_input:
-                        # reads input from stdin and strips whitespaces
                         menu(usr_input, state)
                 else:
-                    if key.data is None:
-                        pass
-                    else:
-                        pass
+                    # handle connection request / recieve message
+                    callback = key.data
+                    callback(state, key.fileobj)
                         
     except SystemExit as message:
         print(message)
