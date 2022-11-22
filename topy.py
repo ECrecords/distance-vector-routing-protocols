@@ -151,8 +151,14 @@ def exit_func():
 def send_message():
     pass
 
-def recv_message():
-    pass
+# this will be called upon reciving a message
+def recv_message(state: Server_State, sock: socket.socket):
+    message = sock.recv(1000)
+    if message:
+        print(f"recv: {message}")
+    else:
+        state.sel.unregister(sock)
+        sock.close()
 
 def handle_connection(state: Server_State, sock: socket.socket) -> None:
     #TODO error handling
