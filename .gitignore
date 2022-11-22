@@ -131,6 +131,3 @@ dmypy.json
 .pyre/
 top2.txt
 lib64
-
-#test
-test_files/
