@@ -14,10 +14,11 @@ from requests import get
 # used to hold needed data & structures 
 class Server_State:
     def __init__(self):
-        self.selector           = None
+        self.sel                = None
         self.id                 = None
         self.ip                 = None
         self.port               = None
+        self.listener_fd        = None
         self.timeout_interval   = None
         self.routing_table      = None
         self.servers            = None
@@ -153,6 +154,43 @@ def send_message():
 def recv_message():
     pass
 
+def clean_up(state: Server_State) -> None:
+
+    # unregister STDIN from selector
+    state.sel.unregister(sys.stdin.fileno())
+
+    # check if listener exists
+    if state.listener_fd is not None:
+        # close and unregister listening soocket
+        state.listener_fd.close()
+        state.sel.unregister(state.listener_fd)
+
+    # close selector
+    state.sel.close()
+
+def init_listr(state: Server_State) -> None:
+    # set the servers ip and port
+    for server in state.servers:
+        id, ip, port = server.split(" ")
+        if id is state.id:
+            state.ip = ip
+            state.port = int(port)
+    
+    # create listening socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        #TODO ERROR HANDLING
+        # bind it to specified port and all network interfaces
+        listener.bind(("0.0.0.0", state.port))
+        #begin listening on socket
+        listener.listen()
+
+        # set listening socket to non-blocking
+        listener.setblocking(False)
+        
+        # register listening socket to state selector
+        state.sel.register(listener, selectors.EVENT_READ, data=None)
+    
+    
 
 def print_commands() -> None:
     print(
@@ -180,15 +218,19 @@ def menu(usr_input: str, state: Server_State) -> None:
         else:
             # Program starts with calling server function
             file_name, state.timeout_interval = server(usr_input)
+
             # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
             state.servers, state.neighbors, state.id = readTopFile(file_name)
+
             # Print this server's IP and ID
             print(f"This server's ID is {state.id}\n")
+
             # Use topology information above to initilize routing table
             state.routing_table = createRouteTable(state.servers, state.neighbors, state.id)
 
             # wrapper used to initiate the listening socket
-            #init_listr()
+            init_listr(state)
+
             # display routing table
             display(state.routing_table)
 
@@ -214,7 +256,8 @@ def menu(usr_input: str, state: Server_State) -> None:
         pass
 
     elif "exit" in usr_input[0]:
-        #TODO exit program correctly
+        #TODO update clean_up as needed
+        clean_up(state)
         exit()
 
     elif state.routing_table is not None:
@@ -238,13 +281,13 @@ Distance Vector Protocol ({get_ip()})
         state = Server_State()
 
         # using selector to read STDIN
-        state.selector = selectors.DefaultSelector()
-        state.selector.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
+        state.sel = selectors.DefaultSelector()
+        state.sel.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
 
         while True:
 
             print(">>", end=" ")
-            event = state.selector.select(timeout=None)
+            event = state.sel.select(timeout=None)
 
             for key, mask in event:
                 
@@ -261,8 +304,6 @@ Distance Vector Protocol ({get_ip()})
                         
     except SystemExit as message:
         print(message)
-
-
     except:
         traceback.print_exc()
         sys.exit()
