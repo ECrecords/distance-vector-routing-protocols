@@ -1,6 +1,4 @@
-from os import stat
 from prettytable import PrettyTable
-from collections import namedtuple
 import sys, traceback
 import socket
 import selectors
