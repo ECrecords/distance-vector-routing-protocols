@@ -57,9 +57,13 @@ def readTopFile(file_name):
 
     # This server's ID
     thisID = neighbors[0].split(" ")[0]
+    thisPort=''
+    for server in servers:
+        if server[0] == thisID:
+            thisPort = server[2]
 
     # return the lists and this server's ID
-    return servers, neighbors, thisID
+    return servers, neighbors, thisID, thisPort
 
 
 # Create Initial routing Table
@@ -150,6 +154,14 @@ def exit_func():
 
 def send_message():
     pass
+
+def update(state: Server_State, command:str):
+    if command[1] != state.id:
+        print(f"Error: \'{command}'. This server's ID is {state.id}")
+    else:
+        dstServerID = command[2]
+        cost = command[3]
+        state.routing_table[dstServerID]['cost'] = cost
 
 # this will be called upon reciving a message
 # TODO this method will be used to rebuild the json file.
@@ -244,7 +256,7 @@ def menu(usr_input: str, state: Server_State) -> None:
             file_name, state.timeout_interval = server(usr_input)
 
             # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
-            state.servers, state.neighbors, state.id = readTopFile(file_name)
+            state.servers, state.neighbors, state.id, state.port = readTopFile(file_name)
 
             # Print this server's IP and ID
             print(f"This server's ID is {state.id}\n")
@@ -259,7 +271,7 @@ def menu(usr_input: str, state: Server_State) -> None:
             display(state.routing_table)
 
     elif "update" in usr_input[0] and state.routing_table is not None:
-        print('TODO') #TODO
+        update(state, usr_input)
 
     elif "step" in usr_input[0] and state.routing_table is not None:
         print('TODO') #TODO
@@ -311,6 +323,7 @@ Distance Vector Protocol ({get_ip()})
         while True:
 
             print(">>", end=" ")
+            sys.stdout.flush()
             event = state.sel.select(timeout=None)
 
             for key, mask in event:
