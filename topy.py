@@ -295,7 +295,7 @@ Distance Vector Protocol ({get_ip()})
 
         # using selector to read STDIN
         state.sel = selectors.DefaultSelector()
-        state.sel.register(sys.stdin, selectors.EVENT_READ)
+        state.sel.register(sys.stdin.fileno(), selectors.EVENT_READ)
 
         while True:
 
