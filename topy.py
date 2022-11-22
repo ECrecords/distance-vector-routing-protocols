@@ -56,12 +56,13 @@ def readTopFile(file_name):
     # This server's ID
     thisID = neighbors[0].split(" ")[0]
     thisPort=''
+    
     for server in servers:
         if server[0] == thisID:
-            thisPort = server[2]
+            thisPort = server.split()[2]
 
     # return the lists and this server's ID
-    return servers, neighbors, thisID, thisPort
+    return servers, neighbors, thisID, int(thisPort)
 
 
 # Create Initial routing Table
@@ -203,7 +204,7 @@ def init_listr(state: Server_State) -> None:
         id, ip, port = server.split(" ")
         if id is state.id:
             state.ip = ip
-            state.port = int(port)
+            # state.port = int(port)
     
     # create listening socket
     state.listener_fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
