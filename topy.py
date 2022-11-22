@@ -195,19 +195,23 @@ def init_listr(state: Server_State) -> None:
             state.port = int(port)
     
     # create listening socket
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
-        #TODO ERROR HANDLING
-        # bind it to specified port and all network interfaces
-        listener.bind(("0.0.0.0", state.port))
-        #begin listening on socket
-        listener.listen()
+    state.listener_fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+    #TODO ERROR HANDLING
+    # bind it to specified port and all network interfaces
+    state.listener_fd.bind(('', state.port))
+    #begin listening on socket
+    state.listener_fd.listen()
 
-        # set listening socket to non-blocking
-        listener.setblocking(False)
-        
-        # register listening socket to state selector
-        # set its callback funtion to handle_connection
-        state.sel.register(listener, selectors.EVENT_READ, data=handle_connection)
+    # set listening socket to non-blocking
+    state.listener_fd.setblocking(False)
+    
+    # register listening socket to state selector
+    # set its callback funtion to handle_connection
+    state.sel.register(state.listener_fd, selectors.EVENT_READ, data=handle_connection)
+    
+    # get state.listener_fd into state
+    state.listener_fd = state.listener_fd
     
     
 
