@@ -2,6 +2,7 @@ from prettytable import PrettyTable
 import sys, traceback
 import socket
 import selectors
+import json
 
 from time import sleep
 from requests import get
@@ -139,7 +140,7 @@ options:
 def packets():
     pass
 
-def step():
+def step(state: Server_State):
     pass
 
 def disable():
@@ -151,8 +152,14 @@ def crash():
 def exit_func():
     pass
 
-def send_message():
-    pass
+def send_message(state: Server_State, ip: str, port: int):
+
+    payload = json.dump(state.routing_table).encode('utf-8')
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((ip, port))
+        #TODO need to know what to send
+        s.sendall(payload)
 
 def update(state: Server_State, command:str):
     if command[1] != state.id:
@@ -165,7 +172,12 @@ def update(state: Server_State, command:str):
 # this will be called upon reciving a message
 # TODO this method will be used to rebuild the json file.
 def recv_message(state: Server_State, sock: socket.socket):
-    message = sock.recv(1000)
+    message = sock.recv(1024)
+
+    recv_payload = json.loads(message)
+
+    print( f"Reacived Update from {recv_payload['header']['ip']} @ {recv_payload['header']['port']} ")
+
     if message:
         print(f"recv: {message}")
     else:
@@ -273,7 +285,7 @@ def menu(usr_input: str, state: Server_State) -> None:
         update(state, usr_input)
 
     elif "step" in usr_input[0] and state.routing_table is not None:
-        print('TODO') #TODO
+        step(state)
 
     elif "packets" in usr_input[0] and state.routing_table is not None:
         print('TODO') #TODO
