@@ -180,11 +180,12 @@ def recv_message(state: Server_State, sock: socket.socket):
         sock.close()
         return
 
-    print( f"Reacived Update from {recv_payload['header']['server_ip']} @ {recv_payload['header']['server_port']} ")
-    
-    for response in recv_payload['payload']['server_response']:
-        dst_id = response['id']
-        state.routing_table[dst_id]['cost'] = response['cost']
+    if recv_message is dict and recv_message.has_key('header'):
+        print( f"Reacived Update from {recv_payload['header']['server_ip']} @ {recv_payload['header']['server_port']} ")
+        
+        for response in recv_payload['payload']['server_response']:
+            dst_id = response['id']
+            state.routing_table[dst_id]['cost'] = response['cost']
 
 def handle_connection(state: Server_State, sock: socket.socket) -> None:
     #TODO error handling
