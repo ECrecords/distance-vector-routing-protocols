@@ -182,7 +182,7 @@ def recv_message(state: Server_State, sock: socket.socket):
     
     sender_id = None
     
-    for server in state.servers
+    for server in state.servers:
         id, ip, sport = server.split(" ")
         if recv_payload['header']['server_ip'] == ip:
             sender_id = id
