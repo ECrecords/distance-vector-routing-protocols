@@ -182,8 +182,8 @@ def recv_message(state: Server_State, sock: socket.socket):
 
     print( f"Reacived Update from {recv_payload['header']['server_ip']} @ {recv_payload['header']['server_port']} ")
     
-    for response in recv_payload['header']['server_response']:
-        print(response)
+    for response in recv_payload['payload']['server_response']:
+        update(state, f"update {state.id} {response['id']} {response['cost']}")
 
 def handle_connection(state: Server_State, sock: socket.socket) -> None:
     #TODO error handling
