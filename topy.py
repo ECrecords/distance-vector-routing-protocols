@@ -173,21 +173,17 @@ def update(state: Server_State, command:str):
 # TODO this method will be used to rebuild the json file.
 def recv_message(state: Server_State, sock: socket.socket):
     message = sock.recv(1024)
-    
-    #print( f"Reacived Update from {recv_payload['header']['ip']} @ {recv_payload['header']['port']} ")
-
     if message:
         recv_payload = json.loads(message)
-    
-        print(recv_payload)
-        #print(f"recv: {message}")
     else:
         state.sel.unregister(sock)
         sock.close()
         return
 
-    for tag in recv_payload:
-        print(tag)
+    print( f"Reacived Update from {recv_payload['header']['server_ip']} @ {recv_payload['header']['server_port']} ")
+    
+    for response in recv_payload['header']['server_response']:
+        print(response)
 
 def handle_connection(state: Server_State, sock: socket.socket) -> None:
     #TODO error handling
