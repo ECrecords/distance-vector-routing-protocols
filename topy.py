@@ -179,8 +179,18 @@ def recv_message(state: Server_State, sock: socket.socket):
         state.sel.unregister(sock)
         sock.close()
         return
-
-    print( f"Reacived Update from {recv_payload['header']['server_ip']} @ {recv_payload['header']['server_port']} ")
+    
+    sender_id = None
+    
+    for server in state.servers
+        id, ip, sport = server.split(" ")
+        if recv_payload['header']['server_ip'] == ip:
+            sender_id = id
+            
+    if sender_id is None:
+        print("ERROR: RECEIVED A MESSAGE FROM UNKOWN SERVER")
+        
+    print(f"RECEIVED A MESSAGE FROM SERVER {sender_id}")
     
     for response in recv_payload['payload']['server_response']:
         dst_id = response['id']
