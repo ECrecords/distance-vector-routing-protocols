@@ -122,7 +122,9 @@ echo "\n${WHITE}gennerating inputs"
 
 server_cmd="server -t ${top_file} -i 30"
 echo "${server_cmd}" >>$INPUT_FILE
-echo "update" >>$INPUT_FILE
+echo "update 1 2 5" >>$INPUT_FILE
+echo "update 1 3 4" >>$INPUT_FILE
+echo "update 1 4 6" >>$INPUT_FILE
 echo "display" >>$INPUT_FILE
 echo "exit" >>$INPUT_FILE
 echo "${GREEN}test generated"
