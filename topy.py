@@ -22,6 +22,7 @@ class Server_State:
         self.routing_table      = None
         self.servers            = None
         self.neighbors          = None
+        self.updatedIDs         = []
         
 
 
@@ -51,31 +52,34 @@ def readTopFile(file_name):
     n_neighbors = int(topology[1])
 
     # list of servers and neighbors
-    servers = [row for row in topology[2:2+n_servers]]
-    neighbors = [row for row in topology[2+n_servers:2+n_servers+n_neighbors]]
+    servers = [row.split() for row in topology[2:2+n_servers]]
+    neighbors = [row.split() for row in topology[2+n_servers:2+n_servers+n_neighbors]]
 
     # This server's ID
-    thisID = neighbors[0].split(" ")[0]
+    thisID = neighbors[0][0]
     thisPort=''
+    thisIP = ''
     
     for server in servers:
         if server[0] == thisID:
-            thisPort = server.split()[2]
+            thisIP = server[1]
+            thisPort = server[2]
+            
 
     # return the lists and this server's ID
-    return servers, neighbors, thisID, int(thisPort)
+    return servers, neighbors, thisID, int(thisPort), thisIP
 
 
 # Create Initial routing Table
-def createRouteTable(servers, neighbors, thisID):
+def createRouteTable(state: Server_State):
     # Using Python Dictionary
     routingTable = {}
 
     # neighbor ID and the cost is pulled from neighbors information 
-    neighborIDs = { i.split(" ")[1]:i.split(" ")[2]  for i in neighbors }
+    neighborIDs = { i[1]:i[2]  for i in state.neighbors }
 
     # server IDs from the topology
-    serverIDs = [ i.split(" ")[0] for i in servers ] 
+    serverIDs = [ i[0] for i in state.servers ] 
 
     
     for serverID in serverIDs:
@@ -84,15 +88,17 @@ def createRouteTable(servers, neighbors, thisID):
             cost = neighborIDs[serverID]
             # add neighbor servers with cost to the routing table
             routingTable[serverID] = {'nexthop': nexthop, 'cost': cost}
+            state.updatedIDs.append(serverID)
         else:
             # add non-neighbor servers with 'Infinity" cost to the routing table
             routingTable[serverID] = {'nexthop': 'n.a', 'cost': 'inf'}
+            state.updatedIDs.append(serverID)
     
     # add this server to this server cost to the routing table
-    routingTable[thisID] = {'nexthop': thisID, 'cost': '0'}
+    routingTable[state.id] = {'nexthop': state.id, 'cost': '0'}
+    state.updatedIDs.append(state.id)
 
     return routingTable
-
 
 # display the routing table of this server
 def display(routingTable):
@@ -108,9 +114,6 @@ def display(routingTable):
 # Initial server function to get topology filename and updating time interval value
 def server(command: str):
     try:
-        # Receiver server command 
-        #command = list(map(str, input("Start with \'server\' command: usage: server [-t FILE_NAME] [-i TIME_INTERVAL]\n>> ").split(" ")))
-        
         # Validate the command and Raise error if server command is not properly used
         if len(command) != 5 or command[0] != 'server' or command[1] != '-t' or command[3] != '-i':
             raise ValueError()
@@ -140,11 +143,25 @@ options:
 def packets():
     pass
 
-def step(state: Server_State):
-    pass
+# our goal is to remove the disabled ID from our state.neighbors list and state.routingtable, 
+# and we don't want this server to send any messages to the disabled server
+# so that disabled server won't receive any meesage and update its list after the time.
+# our state.neighbors list looks like this
+#  [[thisserverID, neighborserverID, cost], [thisserverID, neighborserverID, cost], [thisserverID, neighborserverID, cost], .....]
 
-def disable():
-    pass
+def disable(state: Server_State, command:str):
+    # we are on server1, disable <serverid>
+    # ex) disable 3
+    #check if that id is really our neighbor
+    # if so
+    dstServerID = command[1]
+    state.routing_table[dstServerID]['cost'] = 'inf'
+    state.updatedIDs.append(dstServerID)
+    # remove serverid(ex: 3) from state.neighbors list
+    for item in state.neighbors:
+        if item[1] == dstServerID:
+            state.neighbors.remove(item)
+
 
 def crash():
     pass
@@ -152,15 +169,56 @@ def crash():
 def exit_func():
     pass
 
-def send_message(state: Server_State, ip: str, port: int):
+# Create message
+def formMessage(state: Server_State):
+    updatedIDs = (set(state.updatedIDs))
+    nFields = len(updatedIDs)
+    payload = {}
+    
+    #create header message
+    header = { "header": { "n_update_fields": nFields, "server_ip": state.ip, "server_port": state.port } }
 
-    payload = json.dump(state.routing_table).encode('utf-8')
+    #create payload message
+    server_response_temp = []
+    for item in updatedIDs:
+        if item in state.routing_table.keys():
+            cost = state.routing_table[item]['cost']
+            for server in state.servers:
+                if item == server[0]:
+                    server_response_temp.append({'ip': server[1], 'port': server[2], 'id': server[0], 'cost': cost})
 
+    payload["payload"] = server_response_temp
+    header.update(payload)
+    message = header
+    return(message)
+
+# Send routing table update to neighbors right away. Then reset updated list and timer.
+def step(state: Server_State):
+    if len(state.updatedIDs) != 0:
+        message = formMessage(state)
+        for neighbor in state.neighbors:
+            for server in state.servers:
+                if server[0] == neighbor[1]:
+                    neighborIP = server[1]
+                    neighborPort = server[2]
+                    send_message(message, neighborIP, neighborPort)
+        #reset updateIDs list after step
+        state.updatedIDs.clear()
+    else:
+        print('routing table has not been updated. we are not sending routing table.')
+
+def send_message(message, ip: str, port: int):
+
+    # used json.dumps instead of json.dump. It was throwing error with 'fp'
+    # payload = json.dumps(state.routing_table).encode('utf-8')
+    payload = json.dumps(message).encode('utf-8')
+    
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((ip, port))
+        s.connect((ip, int(port)))
         #TODO need to know what to send
         s.sendall(payload)
 
+# update routing table with new cost and the list of updated servers
 def update(state: Server_State, command:str):
     if command[1] != state.id:
         print(f"Error: \'{command}'. This server's ID is {state.id}")
@@ -168,13 +226,18 @@ def update(state: Server_State, command:str):
         dstServerID = command[2]
         cost = command[3]
         state.routing_table[dstServerID]['cost'] = cost
-
+        state.updatedIDs.append(dstServerID)
+        
+    
 # this will be called upon reciving a message
 # TODO this method will be used to rebuild the json file.
 def recv_message(state: Server_State, sock: socket.socket):
     message = sock.recv(1024)
+    recv_payload = ''
+
     if message:
         recv_payload = json.loads(message)
+        
     else:
         state.sel.unregister(sock)
         sock.close()
@@ -183,18 +246,45 @@ def recv_message(state: Server_State, sock: socket.socket):
     sender_id = None
     
     for server in state.servers:
-        id, ip, sport = server.split(" ")
+        id, ip, _ = server
         if recv_payload['header']['server_ip'] == ip:
             sender_id = id
             
     if sender_id is None:
-        print("ERROR: RECEIVED A MESSAGE FROM UNKOWN SERVER")
+        print("ERROR: RECEIVED A MESSAGE FROM UNKNOWN SERVER")
         
     print(f"RECEIVED A MESSAGE FROM SERVER {sender_id}")
     
-    for response in recv_payload['payload']['server_response']:
-        dst_id = response['id']
-        state.routing_table[dst_id]['cost'] = response['cost']
+    # print recv_payload to test the type and the structure
+    #print(type(recv_payload))
+    #print(recv_payload)
+    
+    # commented out since we don't update the route table immediately without bellman ford algorithm.
+    bellmanford(state, recv_payload, sender_id)
+    
+# Calculates new routing table based on the new Distance Vector Received
+def bellmanford(state: Server_State, recv_payload, sender_id):
+    # routingTable[serverID] = {'nexthop': nexthop, 'cost': cost}
+    for dstID in state.routing_table.keys():
+        myCost = chkInf(state.routing_table[dstID]['cost'])
+        costToSender = chkInf(state.routing_table[sender_id]['cost'])
+        costFromSenderToDst = ''
+        for route in recv_payload['payload']:
+            if route['id'] == dstID:
+                costFromSenderToDst = chkInf(route['cost'])
+        newCost = costToSender + costFromSenderToDst
+        if newCost < myCost:
+            temp = {'nexthop': sender_id, 'cost': newCost}
+            state.routing_table[dstID].update(temp)
+
+
+# check if cost is infinity
+def chkInf(cost: str):
+    if cost == 'inf':
+        return float('inf')
+    else:
+        return int(cost)
+
 
 def handle_connection(state: Server_State, sock: socket.socket) -> None:
     #TODO error handling
@@ -223,13 +313,6 @@ def clean_up(state: Server_State) -> None:
     state.sel.close()
 
 def init_listr(state: Server_State) -> None:
-    # set the servers ip and port
-    for server in state.servers:
-        id, ip, port = server.split(" ")
-        if id is state.id:
-            state.ip = ip
-            # state.port = int(port)
-    
     # create listening socket
     state.listener_fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
@@ -237,7 +320,7 @@ def init_listr(state: Server_State) -> None:
     # bind it to specified port and all network interfaces
     state.listener_fd.bind(('', state.port))
     #begin listening on socket
-    state.listener_fd.listen()
+    state.listener_fd.listen(4)
 
     # set listening socket to non-blocking
     state.listener_fd.setblocking(False)
@@ -248,7 +331,6 @@ def init_listr(state: Server_State) -> None:
     
     # get state.listener_fd into state
     state.listener_fd = state.listener_fd
-    
     
 
 def print_commands() -> None:
@@ -279,13 +361,13 @@ def menu(usr_input: str, state: Server_State) -> None:
             file_name, state.timeout_interval = server(usr_input)
 
             # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
-            state.servers, state.neighbors, state.id, state.port = readTopFile(file_name)
+            state.servers, state.neighbors, state.id, state.port, state.ip = readTopFile(file_name)
 
             # Print this server's IP and ID
             print(f"This server's ID is {state.id}\n")
 
             # Use topology information above to initilize routing table
-            state.routing_table = createRouteTable(state.servers, state.neighbors, state.id)
+            state.routing_table = createRouteTable(state)
 
             # wrapper used to initiate the listening socket
             init_listr(state)
@@ -307,8 +389,8 @@ def menu(usr_input: str, state: Server_State) -> None:
         display(state.routing_table)
     
     elif "disable" in usr_input[0] and state.routing_table is not None:
-        #TODO exit program correctly
-        pass
+        update(state, usr_input)
+        
 
     elif "crash" in usr_input[0] and state.routing_table is not None:
         #TODO exit program correctly
@@ -332,7 +414,7 @@ def menu(usr_input: str, state: Server_State) -> None:
 def main():
     try:
         print(f"""
-Distance Vector Protocol ({get_ip()})
+Distance Vector Protocol ()
 -------------------------------------------------------------""")
         print_commands()
         
@@ -344,7 +426,6 @@ Distance Vector Protocol ({get_ip()})
         state.sel.register(sys.stdin.fileno(), selectors.EVENT_READ)
 
         while True:
-
             print(">>", end=" ")
             sys.stdout.flush()
             event = state.sel.select(timeout=None)
@@ -370,331 +451,6 @@ Distance Vector Protocol ({get_ip()})
         traceback.print_exc()
         sys.exit()
         
-    
+# our main starts here    
 if __name__ == "__main__":
     main()
-
-#########################################################
-# CHAT APPLICATION CODE, REUSE AS NEEDED
-#########################################################
-# # constants and declared types
-# Connection = namedtuple('Connection', ['id', 'addr', 'port'])
-
-# # maximum number of charaters in string to be sent
-# MAX_MSG_SIZE = 100
-
-# # exception used to terminate program
-# class PROGRAM_EXIT(Exception):
-#     pass
-
-# # wrappper used to hold the selection menu of the chat applciation
-# def menu(selector: selectors.DefaultSelector, connection_list: list, listen: socket.socket):
-
-#     # reads input from stdin and strips whitespaces
-#     input = (sys.stdin.readline()).rstrip()
-
-#     # catch error to prevent app crash
-#     try:
-#         # splits the string by " " so addtional input arguments can be read.
-#         input = input.split(" ")
-#         if input[0] == "help":
-#             help()
-#         elif input[0] == "myip":
-#             print(f"The IP address is {get_ip()}")
-#         elif input[0] == "myport":
-#             print(f"The program runs on port number {get_port(listen)}")
-#         elif input[0] == "connect":
-#             try:
-#                 connect(selector, connection_list, input[1], int(input[2]), listen)
-#             except ValueError as e:
-#                 print(f"{e}: invalid port number")
-#         elif input[0] == "list":
-#             list_connections(selector, connection_list)
-#         elif input[0] == "send":
-#             try:
-#                 send_message(selector, connection_list, int(input[1]), " ".join(input[2:len(input)]))
-#             except ValueError as e:
-#                 print(f"{e}: invalid connection id")
-#         elif input[0] == "terminate":
-#             try:
-#                 terminate(selector, connection_list, int(input[1]))
-#             except ValueError as e:
-#                 print(f"{e}: invalid connection id")
-#         elif input[0] == "exit":
-#             raise PROGRAM_EXIT
-#         else:
-#             print(  "invalid command: use command "
-#                     "help to display valid commands" )
-#     except IndexError:
-#         print(  "invalid usage: use command "
-#                 "help to display valid usage")
-
-# # wrapper, display menu
-# def help():
-#     print("myip \t\t\t- display IP address\n"
-#           "myport \t\t\t- display Port\n"
-#           "connect <ip> <port>\t- connect to another peer \n"
-#           "send <id> <msg>\t\t- send messages to peers\n"
-#           "terminate <id>\t\t- end peer connection\n"
-#           "------------\nexit\t\t- exit the program")
-
-
-
-
-
-# def connect(selector: selectors.DefaultSelector, connection_list: list, ip: str, port: int, listen: socket.socket):
-#     try:
-
-#         if ip == get_ip() and port == get_port(listen):
-#             print(f"can not connect to self")
-#             return
-
-#         for entry in connection_list:
-#             sel_key = selector.get_key(entry[1])
-#             key_ip = (sel_key.data.addr).strip()
-#             key_port = int(sel_key.data.port)
-#             if key_port == port and key_ip == ip:
-#                 print(f"already connected to {ip} peer at port {port}")
-#                 return
-
-
-#         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, )
-#         sock.setblocking(False)
-#         try:
-#             sock.connect_ex((ip, port))
-#         except:
-#             print(f"failed to connect")
-#             return
-    
-#         events = selectors.EVENT_READ
-
-#         id = get_id(connection_list)
-
-#         data = Connection(id, ip, port)
-
-#         connection_list.append((id, sock))
-#         selector.register(sock, events, data=data)
-
-#         sleep(0.1)
-#         sock.sendall(f"\n\r\n\rlisten {get_port(listen)}".encode())
-#         print(f"The connection to peer {ip} is succeessfully established")
-#     except ConnectionError as e:
-#         connection_list.remove((id, sock))
-#         selector.unregister(sock)
-#         sock.close()
-#         print(f"{e}: connection failed")
-#     except BlockingIOError as e:
-#         connection_list.remove((id, sock))
-#         selector.unregister(sock)
-#         sock.close()
-#         print(f"{e}: failed to communicate with connection")
-
-#     except:
-#         connection_list.remove((id, sock))
-#         selector.unregister(sock)
-#         traceback.print_exc()
-
-# def list_connections(selector: selectors.DefaultSelector, connection_list: list):
-#     print(f"\nid:\tIP Addresss\tPort")
-#     try:
-#         connection_list.sort()
-#         for entry in connection_list:
-#             sel_key = selector.get_key(entry[1])
-#             print(f"{entry[0]}:\t{sel_key.data.addr}\t{sel_key.data.port}")
-#     except:
-#         print(f"failed to list connetions")
-
-# def send_message(selector: selectors.DefaultSelector, connection_list: list, conn_id: int, msg: str) -> None:
-#     try:
-#         target_sock: socket.socket
-#         target_sock = None
-
-#         for entry in connection_list:
-#             if(entry[0] == conn_id):
-#                 target_sock = entry[1]
-        
-#         if target_sock is None:
-#             print("No corresponding connection was found")    
-#             return
-            
-#         target_sock.sendall(msg.encode())
-#     except BrokenPipeError as e:
-#             print(f"{e}: broken pip")
-#             target_sock.close()
-#             selector.unregister(target_sock)
-#             connection_list.remove((conn_id, target_sock))
-#     except:
-#         print("Message failed to send")
-#     finally:
-#         return
-
-
-# def terminate(selector: selectors.DefaultSelector, connection_list: list, conn_id: int) -> None:
-#     try:
-#         target_sock: socket.socket
-#         target_sock = None
-
-#         for entry in connection_list:
-#             if(entry[0] == conn_id):
-#                 target_sock = entry[1]
-
-#         if target_sock is None:
-#             print("No corresponding connection was found")
-#             return    
-
-#         target_sock.sendall(b"\n\r\n\rterminate\n\r\n\r")
-#         selector.unregister(target_sock)
-#         target_sock.close()
-#         connection_list.remove((conn_id, target_sock))
-
-#     except BrokenPipeError as e:
-#             print(f"{e}: broken pip")
-#             target_sock.close()
-#             selector.unregister(target_sock)
-#             connection_list.remove((conn_id, target_sock))
-#     except:
-#         traceback.print_exc()
-
-
-# def exit_program(selector: selectors.DefaultSelector, connection_list: list) -> None:
-#         for entry in connection_list:
-#             terminate(selector, connection_list, entry[0])
-
-
-# def get_id(connection_list: list) -> None:
-    
-#     id = 1
-#     prev_id = 0
-#     connection_list.sort()
-    
-#     for entry in connection_list:
-        
-#         if id != entry[0] and id != prev_id:
-#             break
-
-#         id += 1
-
-#     return id
-
-
-# def accept_wrapper(selector: selectors.DefaultSelector, connection_list: list, sock: socket.socket, listen: socket.socket) -> None:
-#     try:
-        
-#         conn, addr = sock.accept()
-#         conn.setblocking(False)
-#         events = selectors.EVENT_READ
-        
-#         id = get_id(connection_list)
-#         data = Connection(id, addr[0], addr[1])
-#         selector.register(conn, events, data=data)
-#         connection_list.append((id,conn))
-        
-#         print(f"The connection to peer {addr[0]} is succeessfully established;")
-#     except:
-#         print("The connection to peer was not established;")
-
-# def receive_msg(selector: selectors.DefaultSelector, connection_list: list, sock: socket.socket, data: any, mask: any) -> None:
-#     if mask & selectors.EVENT_READ:
-#         recv_data = sock.recv(MAX_MSG_SIZE)
-
-#         if recv_data == b"\n\r\n\rterminate\n\r\n\r":
-#             print(f"Peer {data.addr} terminates the connection")
-#             terminate(selector, connection_list, data.id)
-#             return
-        
-#         dec_rd = recv_data.decode()
-#         dec_rdata_sp = dec_rd.split(" ")
-#         if dec_rdata_sp[0] == "\n\r\n\rlisten":
-#             sel_key = selector.get_key(sock)
-#             id = sel_key.data.id
-#             ip = sel_key.data.addr
-#             port = dec_rdata_sp[1]
-#             selector.unregister(sock)
-#             selector.register(sock, selectors.EVENT_READ, data=Connection(id, ip, port))
-#             return
-        
-#         print(f"Message received from {data.addr}")
-#         print(f"Sender's Port: {data.port}")
-#         print("Message: \"" + dec_rd + "\"")
-        
-# def main():
-
-#     # intial check 
-#     if len(sys.argv) != 2:
-#         print("usage: python3 chat.py <port number>")
-#         exit()
-
-#     # Grabs port from program arguments
-
-#     SEVER_PORT = sys.argv[1]
-
-#     # Used to start the sockets of each connection
-#     conn_list = list()
-
-#     sel = selectors.DefaultSelector()
-
-#     # create the listen TCP socket
-#     lsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-#     try:
-#         # 0.0.0.0 was used for the app binds to all network intefaces
-#         lsocket.bind(("0.0.0.0", int(SEVER_PORT)))
-#     except OSError as e:
-#         print(f"{e}: failed to bind")
-#         lsocket.close()
-#         sel.close()
-#         exit()
-#     except ValueError as e:
-#         print(f"{e}: invalid port number")
-#         lsocket.close()
-#         sel.close()
-#         exit()
-#     except:
-#         traceback.print_exc()
-#         lsocket.close()
-#         sel.close()
-#         exit()
-
-    
-#     lsocket.listen()
-
-#     lsocket.setblocking(False)
-
-#     sel.register(lsocket, selectors.EVENT_READ, data=None)
-#     sel.register(sys.stdin, selectors.EVENT_READ, data="STDIN")
-
-#     print("Welcome to Chat Application")
-#     help() # print menu at program start
-
-#     try:
-#         while True:
-
-#             print(">>", end=" ")
-#             event = sel.select(timeout=None)
-
-#             for key, mask in event:
-                
-#                 if key.data == "STDIN":
-#                     menu(sel, conn_list, lsocket)
-#                 else:
-#                     if key.data is None:
-#                         accept_wrapper(sel, conn_list, key.fileobj, lsocket)
-#                     else:
-#                         receive_msg(sel, conn_list, key.fileobj, key.data, mask)
-#     except PROGRAM_EXIT:
-#         print("Exiting program...")
-#         exit_program(sel, conn_list)
-#         lsocket.close()
-#         sel.close()
-#         exit()
-#     except KeyboardInterrupt:
-#         exit_program(sel, conn_list)
-#         lsocket.close()
-#         sel.close()
-#         exit()
-#     except:
-#         exit_program(sel, conn_list)
-#         lsocket.close()
-#         sel.close()
-#         traceback.print_exc()
-#         exit()
