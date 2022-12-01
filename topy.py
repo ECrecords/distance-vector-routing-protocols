@@ -169,54 +169,36 @@ def update(state: Server_State, command:str):
         cost = command[3]
         state.routing_table[dstServerID]['cost'] = cost
 
-# called upon recving a message from a connection register
-# in th selector
+# this will be called upon reciving a message
+# TODO this method will be used to rebuild the json file.
 def recv_message(state: Server_State, sock: socket.socket):
-
-    # read 1 GB of data from the socket
-    # TODO reduce to the maximum size the message can be
     message = sock.recv(1024)
-
-    # check if a message was read from the socket
     if message:
-        # converts the bytesarray message to a dict
         recv_payload = json.loads(message)
-    # if nothing is read form the socket
     else:
-        # unregister the connection socket
         state.sel.unregister(sock)
-        # close the connections socket
         sock.close()
-        # exit func
         return
     
-    # used to see if message is from a known server
     sender_id = None
     
-    # check if the ip is a known server with a corresponding id
     for server in state.servers:
-        id, ip, _ = server.split(" ")
+        id, ip, sport = server.split(" ")
         if recv_payload['header']['server_ip'] == ip:
             sender_id = id
             
-    # if the ip is not a known server
     if sender_id is None:
         print("ERROR: RECEIVED A MESSAGE FROM UNKOWN SERVER")
-        return
-    
-    # otherwise print message 
+        
     print(f"RECEIVED A MESSAGE FROM SERVER {sender_id}")
     
-    # for every entnry in the response, chage the approirate routing
-    # table cost
     for response in recv_payload['payload']['server_response']:
         dst_id = response['id']
         state.routing_table[dst_id]['cost'] = response['cost']
 
-# called when a socket attempts to establish a connection 
-# with the listening socket. Creates a socket for that specific connection
-# and adds it to the selector
 def handle_connection(state: Server_State, sock: socket.socket) -> None:
+    #TODO error handling
+
     # accepts incomming connection 
     # and set it to non-blocking
     conn, addr = sock.accept()
@@ -226,10 +208,7 @@ def handle_connection(state: Server_State, sock: socket.socket) -> None:
     # define it callback funtion as recv_message
     state.sel.register(conn, selectors.EVENT_READ, recv_message)
 
-# called when program exit to free up all sockets used in the program
 def clean_up(state: Server_State) -> None:
-    #TODO check if a fd other than stdin and the listener
-    #socket is in the selector
 
     # unregister STDIN from selector
     state.sel.unregister(sys.stdin.fileno())
@@ -243,12 +222,10 @@ def clean_up(state: Server_State) -> None:
     # close selector
     state.sel.close()
 
-
-# creates a listening socket and addeds it to the selector
 def init_listr(state: Server_State) -> None:
     # set the servers ip and port
     for server in state.servers:
-        id, ip, _ = server.split(" ")
+        id, ip, port = server.split(" ")
         if id is state.id:
             state.ip = ip
             # state.port = int(port)
