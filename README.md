@@ -19,7 +19,7 @@
   - list of functions
   - work priorities
   
- ## Funtions with Indivudual Contributions
+ ## Functions with Individual Contributions
  | Function            | Description                                                                                                       | Cho               | Elvis             | Hao               | Jacob             |
  | ------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
  | `menu`              | called when input is recived.                                                                                     | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
