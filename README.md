@@ -24,16 +24,16 @@
  - ### Elvis: 
  | Function            | Description                                                                                                                     | Cho  | Elvis | Hao  | Jacob |
  | ------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---- | ----- | ---- | ----- |
- | `menu`              | called when input is recived.                                                                                                   | - [] | - []  | - [] | - []  |
- | `recv_message`      | called when a connection in the selection has something to read.                                                                | - [] | - []  | - [] | - []  |
- | `get_ip`            | used to get ***this*** server's public ip.                                                                                      | - [] | - []  | - [] | - []  |
- | `find_id`           | <p> used to find the id of the given tuple, `(ip:str, port:int)`, if it is a <br> defined server, otherwise returns `None`.</p> | - [] | - []  | - [] | - []  |
- | `get_port`          | used to find the port of a given socket. *(unused)*                                                                             | - [] | - []  | - [] | - []  |
- | `handle_connection` | called when a connection is attempting to connect through the listening socket.                                                 | - [] | - []  | - [] | - []  |
- | `clean_up`          | called when the server exits, closes selector and all sockets.                                                                  | - [] | - []  | - [] | - []  |
- | `init_listr`        | used to create the listening socket.                                                                                            | - [] | - []  | - [] | - []  |
- | `print_commands`    | print supported commands.                                                                                                       | - [] | - []  | - [] | - []  |
- | `main`              | contains the runtime loop, sets up the event loop using a selector.                                                             | - [] | - []  | - [] | - []  |
+ | `menu`              | called when input is recived.                                                                                                   | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `recv_message`      | called when a connection in the selection has something to read.                                                                | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `get_ip`            | used to get ***this*** server's public ip.                                                                                      | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `find_id`           | <p> used to find the id of the given tuple, `(ip:str, port:int)`, if it is a <br> defined server, otherwise returns `None`.</p> | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `get_port`          | used to find the port of a given socket. *(unused)*                                                                             | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `handle_connection` | called when a connection is attempting to connect through the listening socket.                                                 | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `clean_up`          | called when the server exits, closes selector and all sockets.                                                                  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `init_listr`        | used to create the listening socket.                                                                                            | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `print_commands`    | print supported commands.                                                                                                       | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
+ | `main`              | contains the runtime loop, sets up the event loop using a selector.                                                             | <ul><li>[ ] </li> | <ul><li>[ ] </li>  | <ul><li>[ ] </li> | <ul><li>[ ] </li>  |
  - Hao: Packets, Crush
  - Jacob:
 
