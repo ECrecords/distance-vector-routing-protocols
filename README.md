@@ -22,7 +22,7 @@
  ## Funtions with Indivudual Contributions
  | Function            | Description                                                                                                       | Cho               | Elvis             | Hao               | Jacob             |
  | ------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
- | `menu`              | called when input is recived.                                                                                     | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+ | `menu`              | called when input is recived.                                                                                     | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `recv_message`      | called when a connection in the selection has something to read.                                                  | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `get_ip`            | used to get ***this*** server's public ip.                                                                        | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `find_id`           | used to find the id of the given tuple, `(ip:str, port:int)`, if it is adefined server, otherwise returns `None`. | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
