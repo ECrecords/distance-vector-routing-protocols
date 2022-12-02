@@ -22,6 +22,7 @@ class Server_State:
         self.routing_table      = None
         self.servers            = None
         self.neighbors          = None
+        self.packets            = None
         self.updatedIDs         = []
         
 
@@ -140,8 +141,10 @@ options:
   -i TIME_INTERVAL  Time interval between routing updates in seconds (ex: -i 30)
 """)
 
-def packets():
-    pass
+def packets(state: Server_State):
+    state.packets = state.packets if not state.packets is None else 0
+    print('Number of Packages received : ' + str(state.packets))
+    state.packets = 0
 
 # our goal is to remove the disabled ID from our state.neighbors list and state.routingtable, 
 # and we don't want this server to send any messages to the disabled server
@@ -153,15 +156,17 @@ def disable(state: Server_State, command:str):
     # we are on server1, disable <serverid>
     # ex) disable 3
     #check if that id is really our neighbor
-    # if so
     dstServerID = command[1]
-    state.routing_table[dstServerID]['cost'] = 'inf'
-    state.updatedIDs.append(dstServerID)
+    # if so
+    if(dstServerID in state.neighbors):
+        state.routing_table[dstServerID]['cost'] = 'inf'
+        state.updatedIDs.append(dstServerID)
     # remove serverid(ex: 3) from state.neighbors list
-    for item in state.neighbors:
-        if item[1] == dstServerID:
-            state.neighbors.remove(item)
+        for item in state.neighbors:
+            if item[1] == dstServerID:
+                state.neighbors.remove(item)
 
+   
 
 def crash():
     pass
@@ -262,7 +267,8 @@ def recv_message(state: Server_State, sock: socket.socket):
             
     if sender_id is None:
         print("ERROR: RECEIVED A MESSAGE FROM UNKNOWN SERVER")
-        
+
+    packets += 1    
     print(f"RECEIVED A MESSAGE FROM SERVER {sender_id}")
     
     # print recv_payload to test the type and the structure
@@ -406,7 +412,7 @@ def menu(usr_input: str, state: Server_State) -> None:
         step(state)
 
     elif "packets" in usr_input[0] and state.routing_table is not None:
-        print('TODO') #TODO
+        packets(state)
 
     elif "display" in usr_input[0] and state.routing_table is not None:
         # display routing table
