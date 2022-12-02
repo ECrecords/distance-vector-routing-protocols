@@ -207,16 +207,26 @@ def step(state: Server_State):
     else:
         print('routing table has not been updated. we are not sending routing table.')
 
-def send_message(message, ip: str, port: int):
+def send_message(message, ip: str, port: int) -> None:
 
     # used json.dumps instead of json.dump. It was throwing error with 'fp'
     # payload = json.dumps(state.routing_table).encode('utf-8')
     payload = json.dumps(message).encode('utf-8')
     
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((ip, int(port)))
-        #TODO need to know what to send
-        s.sendall(payload)
+        try:
+            s.settimeout(5)
+            s.connect((ip, int(port)))
+        except socket.timeout:
+            print(f'error: timeout connecting to {ip}:{port}')
+        except socket.error:
+            s.close()
+            print(f'error: failed to connect to {ip}:{port}')
+        else:
+            try:
+                s.sendall(payload)
+            except socket.error:
+                print(f'error: failed to send message to {ip}:{port}')
 
 # update routing table with new cost and the list of updated servers
 def update(state: Server_State, command:str):
@@ -313,24 +323,33 @@ def clean_up(state: Server_State) -> None:
     state.sel.close()
 
 def init_listr(state: Server_State) -> None:
-    # create listening socket
-    state.listener_fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
-    #TODO ERROR HANDLING
-    # bind it to specified port and all network interfaces
-    state.listener_fd.bind(('', state.port))
-    #begin listening on socket
-    state.listener_fd.listen(4)
+    try:
+        # create listening socket
+        state.listener_fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except socket.error as err:
+        state.listener_fd = None
+        print(f'error: {err}')
+    else:
+        try:
+            # bind it to specified port and all network interfaces
+            state.listener_fd.bind(('', state.port))
+        except socket.error as err:
+            state.listener_fd = None
+            print(f'error: {err}')
+        else:
+            #begin listening on socket
+            state.listener_fd.listen(4)
 
-    # set listening socket to non-blocking
-    state.listener_fd.setblocking(False)
+            # set listening socket to non-blocking
+            state.listener_fd.setblocking(False)
     
-    # register listening socket to state selector
-    # set its callback funtion to handle_connection
-    state.sel.register(state.listener_fd, selectors.EVENT_READ, data=handle_connection)
+            # register listening socket to state selector
+            # set its callback funtion to handle_connection
+            state.sel.register(state.listener_fd, selectors.EVENT_READ, data=handle_connection)
     
-    # get state.listener_fd into state
-    state.listener_fd = state.listener_fd
+            # get state.listener_fd into state
+            state.listener_fd = state.listener_fd
     
 
 def print_commands() -> None:
@@ -371,6 +390,11 @@ def menu(usr_input: str, state: Server_State) -> None:
 
             # wrapper used to initiate the listening socket
             init_listr(state)
+
+            # check if listener is created
+            if state.listener_fd is None:
+                print("error: failed to create listening socket")
+                exit(1)
 
             # display routing table
             display(state.routing_table)
