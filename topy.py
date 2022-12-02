@@ -164,12 +164,12 @@ def packets():
 # our state.neighbors list looks like this
 #  [[thisserverID, neighborserverID, cost], [thisserverID, neighborserverID, cost], [thisserverID, neighborserverID, cost], .....]
 
-def disable(state: Server_State, command:str):
+def disable(state: Server_State, id: str):
     # we are on server1, disable <serverid>
     # ex) disable 3
     #check if that id is really our neighbor
     # if so
-    dstServerID = command[1]
+    dstServerID = id
     state.routing_table[dstServerID]['cost'] = 'inf'
     state.updatedIDs.append(dstServerID)
     # remove serverid(ex: 3) from state.neighbors list
@@ -256,11 +256,11 @@ def send_message(state: Server_State, message, ip: str, port: int) -> bool:
 
             if not t_id:
                 return
-            
             if t_id in state.failed_con.keys():
                 if (state.failed_con[t_id] == FAILED_SEND_MAX-1):
                     print(f'error: Server {t_id} has failed to communicate {FAILED_SEND_MAX} times')
-                    state.failed_con.clear()
+                    disable(state, str(t_id))
+                    state.failed_con.pop(t_id)
                 else:
                     state.failed_con[t_id] += 1
             else:
