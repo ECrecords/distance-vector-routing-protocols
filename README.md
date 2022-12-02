@@ -22,12 +22,12 @@
  ## List of functions done by each member
  - Cho: Server, Read Topology files, Initialize Routing Table, Menu, Update
  - ### Elvis: 
- | Function            | Descr.                                                                                                              |
+ | Function            | Description                                                                                                         |
  | ------------------- | ------------------------------------------------------------------------------------------------------------------- |
  | `menu`              | called when input is recived.                                                                                       |
  | `recv_message`      | called when a connection in the selection has something to read.                                                    |
  | `get_ip`            | used to get ***this*** server's public ip.                                                                          |
- | `find_id`           | <p> used to find the id of the given tuple (ip, port) if it is a <br> defined server, otherwise returns `None`.</p> |
+ | `find_id`           | <p> used to find the id of the given tuple, `(ip:str, port:int)`, if it is a <br> defined server, otherwise returns `None`.</p> |
  | `get_port`          | used to find the port of a given socket. *(unused)*                                                                 |
  | `handle_connection` | called when a connection is attempting to connect through the listening socket.                                     |
  | `clean_up`          | called when the server exits, closes selector and all sockets.                                                      |
