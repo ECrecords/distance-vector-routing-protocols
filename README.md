@@ -23,5 +23,5 @@
  - Jacob:
  - Cho: Server, Read Topology files, Initialize Routing Table, Menu, Update
  - Hao: Packets, Crush
- - Elvis: Menu, Send Message, Receive Message
+ - Elvis: Menu, Send Message, Receive Message, Error Handling, Disable on 3 failed connections
  
