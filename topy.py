@@ -231,9 +231,11 @@ def send_message(state: Server_State, message, ip: str, port: int) -> bool:
     # payload = json.dumps(state.routing_table).encode('utf-8')
     payload = json.dumps(message).encode('utf-8')
     
+    # create a socket to connect to target server
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             try:
+                # used to time out server
                 s.settimeout(5)
                 s.connect((ip, int(port)))
             except socket.timeout:
@@ -251,21 +253,32 @@ def send_message(state: Server_State, message, ip: str, port: int) -> bool:
                     raise FAILED_SEND()
                 else:
                     return True
+
+        # if message fails to send for any for the defined reasons
         except FAILED_SEND as err:
+            # find the id of the given ip & port
             t_id = find_id(state, ip, port)
 
+            # if ip & port is are not known servers
             if not t_id:
                 return
+
+            #  target id is already in the failed_con list
             if t_id in state.failed_con.keys():
+
+                # if server has failed to communicate MAX-1 times
+                # disable it and remove it from the fail_con list
                 if (state.failed_con[t_id] == FAILED_SEND_MAX-1):
                     print(f'error: Server {t_id} has failed to communicate {FAILED_SEND_MAX} times')
                     disable(state, str(t_id))
                     state.failed_con.pop(t_id)
+                # otherwise increment
                 else:
                     state.failed_con[t_id] += 1
+            # otherwise if it doesnt exist create entry
             else:
                 state.failed_con[t_id] = 1        
-
+            
             return False
             
 
