@@ -22,6 +22,6 @@
  ## List of functions done by each member
  - Jacob:
  - Cho: Server, Read Topology files, Initialize Routing Table, Menu, Update
- - Hao:
+ - Hao: Packets, Crush
  - Elvis: Menu, Send Message, Receive Message
  
