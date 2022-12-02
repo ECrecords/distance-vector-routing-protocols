@@ -10,6 +10,9 @@ from requests import get
 # used for updating routing table periodicly
 #import schedule 
 
+#constant 
+FAILED_SEND_MAX = 3
+
 # used to hold needed data & structures 
 class Server_State:
     def __init__(self):
@@ -23,12 +26,24 @@ class Server_State:
         self.servers            = None
         self.neighbors          = None
         self.updatedIDs         = []
-        
+        self.failed_con         = {}
 
 
 # used to get public ip
 def get_ip() -> str:
     return get('https://api.ipify.org').content.decode('utf8')
+
+# input ip and port and return if it is a known server
+def find_id(state: Server_State, t_ip: str, t_port: int) -> int:
+    t_id: int = None
+
+    for server in state.servers:
+        id, ip, port = server
+        if t_ip == ip and t_port == port:
+            t_id = id
+    
+    return t_id
+    
 
 # used to get the port number of a specified socket
 def get_port(sock: socket.socket) -> int:
@@ -201,13 +216,16 @@ def step(state: Server_State):
                 if server[0] == neighbor[1]:
                     neighborIP = server[1]
                     neighborPort = server[2]
-                    send_message(message, neighborIP, neighborPort)
+                    send_message(state, message, neighborIP, neighborPort)
         #reset updateIDs list after step
         state.updatedIDs.clear()
     else:
         print('routing table has not been updated. we are not sending routing table.')
 
-def send_message(message, ip: str, port: int) -> None:
+class FAILED_SEND(OSError):
+    pass
+
+def send_message(state: Server_State, message, ip: str, port: int) -> bool:
 
     # used json.dumps instead of json.dump. It was throwing error with 'fp'
     # payload = json.dumps(state.routing_table).encode('utf-8')
@@ -215,18 +233,44 @@ def send_message(message, ip: str, port: int) -> None:
     
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
-            s.settimeout(5)
-            s.connect((ip, int(port)))
-        except socket.timeout:
-            print(f'error: timeout connecting to {ip}:{port}')
-        except socket.error:
-            s.close()
-            print(f'error: failed to connect to {ip}:{port}')
-        else:
             try:
-                s.sendall(payload)
+                s.settimeout(5)
+                s.connect((ip, int(port)))
+            except socket.timeout:
+                print(f'error: timeout connecting to {ip}:{port}')
+                raise FAILED_SEND()
             except socket.error:
-                print(f'error: failed to send message to {ip}:{port}')
+                s.close()
+                print(f'error: failed to connect to {ip}:{port}')
+                raise FAILED_SEND()
+            else:
+                try:
+                    s.sendall(payload)
+                except socket.error:
+                    print(f'error: failed to send message to {ip}:{port}')
+                    raise FAILED_SEND()
+                else:
+                    return True
+        except FAILED_SEND as err:
+            t_id = find_id(state, ip, port)
+
+            if not t_id:
+                return
+            
+            if t_id in state.failed_con.keys():
+                if (state.failed_con[t_id] == FAILED_SEND_MAX-1):
+                    print(f'error: Server {t_id} has failed to communicate {FAILED_SEND_MAX} times')
+                    state.failed_con.clear()
+                else:
+                    state.failed_con[t_id] += 1
+            else:
+                state.failed_con[t_id] = 1        
+
+            return False
+            
+
+
+            
 
 # update routing table with new cost and the list of updated servers
 def update(state: Server_State, command:str):
@@ -240,7 +284,6 @@ def update(state: Server_State, command:str):
         
     
 # this will be called upon reciving a message
-# TODO this method will be used to rebuild the json file.
 def recv_message(state: Server_State, sock: socket.socket):
     message = sock.recv(1024)
     recv_payload = ''
