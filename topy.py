@@ -176,9 +176,9 @@ def disable(state: Server_State, id: str):
     state.routing_table[dstServerID]['cost'] = 'inf'
     state.updatedIDs.append(dstServerID)
     # remove serverid(ex: 3) from state.neighbors list
-        for item in state.neighbors:
-            if item[1] == dstServerID:
-                state.neighbors.remove(item)
+    for item in state.neighbors:
+        if item[1] == dstServerID:
+            state.neighbors.remove(item)
 
    
 
