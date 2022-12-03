@@ -1,35 +1,49 @@
 from prettytable import PrettyTable
-import sys
-import traceback
+import sys, traceback
 import socket
 import selectors
 import json
+import threading
+from requests import get 
 
-from time import sleep
-from requests import get
-
-# used for updating routing table periodicly
-#import schedule
-
-# constant
+#constant 
 FAILED_SEND_MAX = 3
 
-# used to hold needed data & structures
+# used to hold needed data & structures 
 class Server_State:
     def __init__(self):
-        self.sel = None
-        self.id = None
-        self.ip = None
-        self.port = None
-        self.listener_fd = None
-        self.timeout_interval = None
-        self.routing_table = None
-        self.servers = None
-        self.neighbors = None
-        self.packets = None
-        self.updatedIDs = []
-        self.failed_con = {}
+        self.mutex : threading.Lock  = None
+        self.timer : threading.Timer = None
+        self.sel                = None
+        self.id                 = None
+        self.ip                 = None
+        self.port               = None
+        self.listener_fd        = None
+        self.timeout_interval   = None
+        self.routing_table      = None
+        self.servers            = None
+        self.neighbors          = None
+        self.crash              = 0
+        self.packets            = 0
+        self.updatedIDs         = []
+        self.failed_con         = {}
 
+# called upon the t
+def per_update(*args) -> None:
+    
+    # hand over control to fuction
+    args[0].mutex.acquire()
+    
+    #print('periodic update initiated...')
+
+    step(args[0])
+    
+    # restart timer
+    args[0].timer = threading.Timer(args[0].timeout_interval, per_update, [args[0], ''])
+    args[0].timer.start()
+    
+    # release control
+    args[0].mutex.release()  
 
 # used to get public ip
 def get_ip() -> str:
@@ -43,9 +57,9 @@ def find_id(state: Server_State, t_ip: str, t_port: int) -> int:
         id, ip, port = server
         if t_ip == ip and t_port == port:
             t_id = id
-
+    
     return t_id
-
+    
 
 # used to get the port number of a specified socket
 def get_port(sock: socket.socket) -> int:
@@ -58,32 +72,30 @@ def get_port(sock: socket.socket) -> int:
         return port
 
 # Read Topology File to create a list of Servers in the network and this server's neighbors
-
-
 def readTopFile(file_name):
-
+    
     # Open Topology file and read each line
     with open(file_name, 'r') as file:
         topology = file.read().splitlines()
-
+    
     # number of servers and neighbors
     n_servers = int(topology[0])
     n_neighbors = int(topology[1])
 
     # list of servers and neighbors
     servers = [row.split() for row in topology[2:2+n_servers]]
-    neighbors = [row.split()
-                 for row in topology[2+n_servers:2+n_servers+n_neighbors]]
+    neighbors = [row.split() for row in topology[2+n_servers:2+n_servers+n_neighbors]]
 
     # This server's ID
     thisID = neighbors[0][0]
-    thisPort = ''
+    thisPort=''
     thisIP = ''
-
+    
     for server in servers:
         if server[0] == thisID:
             thisIP = server[1]
             thisPort = server[2]
+            
 
     # return the lists and this server's ID
     return servers, neighbors, thisID, int(thisPort), thisIP
@@ -94,12 +106,13 @@ def createRouteTable(state: Server_State):
     # Using Python Dictionary
     routingTable = {}
 
-    # neighbor ID and the cost is pulled from neighbors information
-    neighborIDs = {i[1]: i[2] for i in state.neighbors}
+    # neighbor ID and the cost is pulled from neighbors information 
+    neighborIDs = { i[1]:i[2]  for i in state.neighbors }
 
     # server IDs from the topology
-    serverIDs = [i[0] for i in state.servers]
+    serverIDs = [ i[0] for i in state.servers ] 
 
+    
     for serverID in serverIDs:
         if serverID in neighborIDs.keys():
             nexthop = serverID
@@ -111,7 +124,7 @@ def createRouteTable(state: Server_State):
             # add non-neighbor servers with 'Infinity" cost to the routing table
             routingTable[serverID] = {'nexthop': 'n.a', 'cost': 'inf'}
             state.updatedIDs.append(serverID)
-
+    
     # add this server to this server cost to the routing table
     routingTable[state.id] = {'nexthop': state.id, 'cost': '0'}
     state.updatedIDs.append(state.id)
@@ -124,9 +137,8 @@ def display(routingTable):
     for item in routingTable:
         # Display the routing table with NON-Infinity cost links
         if routingTable[item]['cost'] != 'inf':
-            myTable.add_row(
-                [item, routingTable[item]['nexthop'], routingTable[item]['cost']])
-    myTable.sortby = "ID"
+            myTable.add_row([item, routingTable[item]['nexthop'], routingTable[item]['cost']])
+    myTable.sortby = "ID"        
     print(myTable)
 
 
@@ -136,12 +148,12 @@ def server(command: str):
         # Validate the command and Raise error if server command is not properly used
         if len(command) != 5 or command[0] != 'server' or command[1] != '-t' or command[3] != '-i':
             raise ValueError()
-
+        
         else:
             # Get file name and time interval
             file_name = command[2]
             time_interval = int(command[4])
-
+            
             return file_name, time_interval
 
     # Throw an error for invalid server function usages.
@@ -159,37 +171,62 @@ options:
   -i TIME_INTERVAL  Time interval between routing updates in seconds (ex: -i 30)
 """)
 
-
 def packets(state: Server_State):
     state.packets = state.packets if not state.packets is None else 0
     print('Number of Packages received : ' + str(state.packets))
     state.packets = 0
 
-# our goal is to remove the disabled ID from our state.neighbors list and state.routingtable,
+# our goal is to remove the disabled ID from our state.neighbors list and state.routingtable, 
 # and we don't want this server to send any messages to the disabled server
 # so that disabled server won't receive any meesage and update its list after the time.
 # our state.neighbors list looks like this
 #  [[thisserverID, neighborserverID, cost], [thisserverID, neighborserverID, cost], [thisserverID, neighborserverID, cost], .....]
 
-
 def disable(state: Server_State, id: str):
     # we are on server1, disable <serverid>
     # ex) disable 3
-    # check if that id is really our neighbor
+    #check if that id is really our neighbor
     # if so
-    dstServerID = id
-    state.routing_table[dstServerID]['cost'] = 'inf'
-    state.updatedIDs.append(dstServerID)
-    # remove serverid(ex: 3) from state.neighbors list
-    for item in state.neighbors:
-        if item[1] == dstServerID:
-            state.neighbors.remove(item)
+    dstServerID = id[1]
+    for i in state.neighbors:
+        if(dstServerID == i[1]):
+            state.routing_table[dstServerID]['cost'] = 'inf'
+            state.updatedIDs.append(dstServerID)
+            # remove serverid(ex: 3) from state.neighbors list
+            state.neighbors.remove(i)
 
+def crash(state:Server_State):
+    # set all neighbors cost as 'inf',then remove all from state.neighbors
+    state.updatedIDs=[]
+    for i in state.neighbors:
+        state.routing_table[i[1]]['cost'] = 'inf'
+        state.updatedIDs.append(i[1])
+        
+    # inform neighbors to disable this server crashed
+    send_message_crash(state)
+    
+    # remove all connections from state.neighbors  
+    for i in state.neighbors[:]:
+        state.neighbors.remove(i)
+        
+    # display routing table    
+    display(state.routing_table)
 
-def crash():
-    pass
-
-
+# handle sending messages only after crush command
+def send_message_crash(state: Server_State):
+    # set crash flag as 1 to inform neighbors this is a crash command
+    state.crash = 1
+    message = formMessage(state)
+    for neighbor in state.neighbors:
+        for server in state.servers:
+            if server[0] == neighbor[1]:
+                neighborIP = server[1]
+                neighborPort = server[2]
+                send_message(state, message, neighborIP, neighborPort)
+                
+    # set crash flag as default 0 after we inform neightbors
+    state.crash = 0
+        
 def exit_func():
     pass
 
@@ -198,25 +235,23 @@ def formMessage(state: Server_State):
     updatedIDs = (set(state.updatedIDs))
     nFields = len(updatedIDs)
     payload = {}
+    
+    #create header message
+    header = { "header": { "n_update_fields": nFields, "server_ip": state.ip, "server_port": state.port, "crash": state.crash} }
 
-    # create header message
-    header = {"header": {"n_update_fields": nFields,
-                         "server_ip": state.ip, "server_port": state.port}}
-
-    # create payload message
+    #create payload message
     server_response_temp = []
     for item in updatedIDs:
         if item in state.routing_table.keys():
             cost = state.routing_table[item]['cost']
             for server in state.servers:
                 if item == server[0]:
-                    server_response_temp.append(
-                        {'ip': server[1], 'port': server[2], 'id': server[0], 'cost': cost})
+                    server_response_temp.append({'ip': server[1], 'port': server[2], 'id': server[0], 'cost': cost})
 
     payload["payload"] = server_response_temp
     header.update(payload)
     message = header
-    return (message)
+    return(message)
 
 # Send routing table update to neighbors right away. Then reset updated list and timer.
 def step(state: Server_State):
@@ -228,22 +263,20 @@ def step(state: Server_State):
                     neighborIP = server[1]
                     neighborPort = server[2]
                     send_message(state, message, neighborIP, neighborPort)
-        # reset updateIDs list after step
+        #reset updateIDs list after step
         state.updatedIDs.clear()
     else:
         print('routing table has not been updated. we are not sending routing table.')
 
-
 class FAILED_SEND(OSError):
     pass
-
 
 def send_message(state: Server_State, message, ip: str, port: int) -> bool:
 
     # used json.dumps instead of json.dump. It was throwing error with 'fp'
     # payload = json.dumps(state.routing_table).encode('utf-8')
     payload = json.dumps(message).encode('utf-8')
-
+    
     # create a socket to connect to target server
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
@@ -282,8 +315,7 @@ def send_message(state: Server_State, message, ip: str, port: int) -> bool:
                 # if server has failed to communicate MAX-1 times
                 # disable it and remove it from the fail_con list
                 if (state.failed_con[t_id] == FAILED_SEND_MAX-1):
-                    print(
-                        f'error: Server {t_id} has failed to communicate {FAILED_SEND_MAX} times')
+                    print(f'error: Server {t_id} has failed to communicate {FAILED_SEND_MAX} times')
                     disable(state, str(t_id))
                     state.failed_con.pop(t_id)
                 # otherwise increment
@@ -291,13 +323,16 @@ def send_message(state: Server_State, message, ip: str, port: int) -> bool:
                     state.failed_con[t_id] += 1
             # otherwise if it doesnt exist create entry
             else:
-                state.failed_con[t_id] = 1
-
+                state.failed_con[t_id] = 1        
+            
             return False
+            
 
+
+            
 
 # update routing table with new cost and the list of updated servers
-def update(state: Server_State, command: str):
+def update(state: Server_State, command:str):
     if command[1] != state.id:
         print(f"Error: \'{command}'. This server's ID is {state.id}")
     else:
@@ -305,8 +340,8 @@ def update(state: Server_State, command: str):
         cost = command[3]
         state.routing_table[dstServerID]['cost'] = cost
         state.updatedIDs.append(dstServerID)
-
-
+        
+    
 # this will be called upon reciving a message
 def recv_message(state: Server_State, sock: socket.socket):
     message = sock.recv(1024)
@@ -314,43 +349,54 @@ def recv_message(state: Server_State, sock: socket.socket):
 
     if message:
         recv_payload = json.loads(message)
-
+        
     else:
         state.sel.unregister(sock)
         sock.close()
         return
-
     sender_id = None
-
+    
     for server in state.servers:
-        id, ip, _ = server
-        if recv_payload['header']['server_ip'] == ip:
+        id, ip, port = server
+        if recv_payload['header']['server_ip'] == ip and recv_payload['header']['server_port'] == int(port):
             sender_id = id
-
+            
     if sender_id is None:
         print("ERROR: RECEIVED A MESSAGE FROM UNKNOWN SERVER")
 
-    packets += 1
+    state.packets += 1    
     print(f"RECEIVED A MESSAGE FROM SERVER {sender_id}")
-
+    
     # print recv_payload to test the type and the structure
-    # print(type(recv_payload))
-    # print(recv_payload)
-
+    #print(type(recv_payload))
+    #print(recv_payload)
+    
     # commented out since we don't update the route table immediately without bellman ford algorithm.
-    bellmanford(state, recv_payload, sender_id)
+    crash_flag = recv_payload['header']['crash']
+    
+    # if this message is from a crush command
+    if(crash_flag == 1):
+        eliminateCrashServer(state, recv_payload, sender_id)
+    else:
+        bellmanford(state, recv_payload, sender_id)
 
+def eliminateCrashServer(state: Server_State, recv_payload, sender_id):
+    sender_id_input = ['disable',sender_id]
+    disable(state, sender_id_input)
+    display(state.routing_table)
+          
 # Calculates new routing table based on the new Distance Vector Received
 def bellmanford(state: Server_State, recv_payload, sender_id):
     # routingTable[serverID] = {'nexthop': nexthop, 'cost': cost}
     for dstID in state.routing_table.keys():
         myCost = chkInf(state.routing_table[dstID]['cost'])
         costToSender = chkInf(state.routing_table[sender_id]['cost'])
-        costFromSenderToDst = ''
+        costFromSenderToDst = 0
         for route in recv_payload['payload']:
             if route['id'] == dstID:
                 costFromSenderToDst = chkInf(route['cost'])
         newCost = costToSender + costFromSenderToDst
+        
         if newCost < myCost:
             temp = {'nexthop': sender_id, 'cost': newCost}
             state.routing_table[dstID].update(temp)
@@ -365,9 +411,9 @@ def chkInf(cost: str):
 
 
 def handle_connection(state: Server_State, sock: socket.socket) -> None:
-    # TODO error handling
+    #TODO error handling
 
-    # accepts incomming connection
+    # accepts incomming connection 
     # and set it to non-blocking
     conn, addr = sock.accept()
     conn.setblocking(False)
@@ -375,7 +421,6 @@ def handle_connection(state: Server_State, sock: socket.socket) -> None:
     # register connection to selector and
     # define it callback funtion as recv_message
     state.sel.register(conn, selectors.EVENT_READ, recv_message)
-
 
 def clean_up(state: Server_State) -> None:
 
@@ -391,9 +436,8 @@ def clean_up(state: Server_State) -> None:
     # close selector
     state.sel.close()
 
-
 def init_listr(state: Server_State) -> None:
-
+    
     try:
         # create listening socket
         state.listener_fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -408,24 +452,23 @@ def init_listr(state: Server_State) -> None:
             state.listener_fd = None
             print(f'error: {err}')
         else:
-            # begin listening on socket
+            #begin listening on socket
             state.listener_fd.listen(4)
 
             # set listening socket to non-blocking
             state.listener_fd.setblocking(False)
-
+    
             # register listening socket to state selector
             # set its callback funtion to handle_connection
-            state.sel.register(state.listener_fd,
-                               selectors.EVENT_READ, data=handle_connection)
-
+            state.sel.register(state.listener_fd, selectors.EVENT_READ, data=handle_connection)
+    
             # get state.listener_fd into state
             state.listener_fd = state.listener_fd
-
+    
 
 def print_commands() -> None:
     print(
-        f"""
+f"""
 Commands:
 
 server -t <topology-file-name> -i <routing-update-interval>
@@ -438,10 +481,8 @@ crash
 exit\n""")
 
 # wrappper used to hold the selection menu of the chat applciation
-
-
 def menu(usr_input: str, state: Server_State) -> None:
-
+    
     # splits the string by " " so addtional usr_input arguments can be read.
     usr_input = usr_input.split(" ")
 
@@ -453,8 +494,7 @@ def menu(usr_input: str, state: Server_State) -> None:
             file_name, state.timeout_interval = server(usr_input)
 
             # Get topology information (servers in the topology, neighbors to this server, and this server's ID)
-            state.servers, state.neighbors, state.id, state.port, state.ip = readTopFile(
-                file_name)
+            state.servers, state.neighbors, state.id, state.port, state.ip = readTopFile(file_name)
 
             # Print this server's IP and ID
             print(f"This server's ID is {state.id}\n")
@@ -470,6 +510,13 @@ def menu(usr_input: str, state: Server_State) -> None:
                 print("error: failed to create listening socket")
                 exit(1)
 
+
+            state.mutex = threading.Lock()
+
+            state.timer = threading.Timer(state.timeout_interval, per_update, [state, ''])
+        
+            state.timer.start()
+            
             # display routing table
             display(state.routing_table)
 
@@ -477,7 +524,21 @@ def menu(usr_input: str, state: Server_State) -> None:
         update(state, usr_input)
 
     elif "step" in usr_input[0] and state.routing_table is not None:
+        
+        # stop threads from accesing
+        state.mutex.acquire()
+        
+        #stop timer
+        state.timer.cancel()
+        
         step(state)
+        
+        state.timer = threading.Timer(state.timeout_interval, per_update, [state, ''])
+        
+        state.timer.start()
+        
+        # release 
+        state.mutex.release() 
 
     elif "packets" in usr_input[0] and state.routing_table is not None:
         packets(state)
@@ -485,18 +546,22 @@ def menu(usr_input: str, state: Server_State) -> None:
     elif "display" in usr_input[0] and state.routing_table is not None:
         # display routing table
         display(state.routing_table)
-
+    
     elif "disable" in usr_input[0] and state.routing_table is not None:
-        update(state, usr_input)
+        disable(state, usr_input)
+        
 
     elif "crash" in usr_input[0] and state.routing_table is not None:
-        # TODO exit program correctly
-        pass
+        crash(state)
 
     elif "exit" in usr_input[0]:
-        # TODO update clean_up as needed
+        #TODO update clean_up as needed
+        state.mutex.acquire()
+        state.timer.cancel()
+        state.mutex.release()
+        
         clean_up(state)
-        exit()
+        sys.exit()
 
     elif state.routing_table is not None:
         print(f"'{' '.join(usr_input)}' is a invalid command")
@@ -514,7 +579,7 @@ def main():
 Distance Vector Protocol ()
 -------------------------------------------------------------""")
         print_commands()
-
+        
         # delcare and init server state
         state = Server_State()
 
@@ -533,7 +598,7 @@ Distance Vector Protocol ()
                     # reads input from stdin and strips whitespaces
                     usr_input = (sys.stdin.readline()).strip()
 
-                    # ignore if string is empty
+                    # ignore if string is empty 
                     # otherwise call menu with usr input
                     if usr_input:
                         menu(usr_input, state)
@@ -541,14 +606,13 @@ Distance Vector Protocol ()
                     # handle connection request / recieve message
                     callback = key.data
                     callback(state, key.fileobj)
-
+                        
     except SystemExit as message:
         print(message)
     except:
         traceback.print_exc()
         sys.exit()
-
-
-# our main starts here
+        
+# our main starts here    
 if __name__ == "__main__":
     main()
