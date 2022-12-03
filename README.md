@@ -32,5 +32,6 @@
  | `init_listr`        | used to create the listening socket.                                                                              | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `print_commands`    | print supported commands.                                                                                         | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `main`              | contains the runtime loop, sets up the event loop using a selector.                                               | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+  | `additional`              | blah blah                                               | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
 
