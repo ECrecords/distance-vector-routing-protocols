@@ -28,7 +28,7 @@
   
 ### Codes (Functions) with Individual Contributions
 
-### General Purpose
+#### General Purpose
 | Function             | Description                                                                                                       | Cho               | Elvis             | Hao               | Jacob             |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `Server_State Class` | Contains the server's information including timer, id, ip, port, routing table, network topology, packets, etc    | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[X] </li> | <ul><li>[X] </li> |
@@ -39,7 +39,7 @@
 | `get_ip`             | used to get ***this*** server's public ip.                                                                        | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `print_commands`     | print supported commands.                                                                                         | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
-### Networking
+#### Networking
 |                     |                                                                                 |                   |                   |                   |                   |
 | ------------------- | ------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `main`              | contains the runtime loop, sets up the event loop using a selector.             | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
