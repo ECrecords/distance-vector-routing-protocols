@@ -36,7 +36,6 @@
 | `find_id`            | used to find the id of the given tuple, `(ip:str, port:int)`, if it is adefined server, otherwise returns `None`. | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `get_port`           | used to find the port of a given socket. *(unused)*                                                               | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `chkInf`             | handles 'Infinity' cost when cost is used for calculation                                                         | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-| `clean_up`           | called when the server exits, closes selector and all sockets.                                                    | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `get_ip`             | used to get ***this*** server's public ip.                                                                        | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `print_commands`     | print supported commands.                                                                                         | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
@@ -54,7 +53,7 @@
 
 
 #### Commands
-##### `server`
+##### server
 |                    |                                                                                    |                   |                   |                   |                   |
 | ------------------ | ---------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `server`           | Initial server function to get topology filename and updating time interval value. | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
@@ -62,38 +61,38 @@
 | `readTopFile`      | Read topology file to establish topology and initial routing table.                | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
 
-##### `display`
+##### display
 |           |                                              |                   |                   |                   |                   |
 | --------- | -------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `display` | display current routing table of the server. | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
-##### `step`
+##### step
 |        |                                                                                                     |                   |                   |                   |                   |
 | ------ | --------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `step` | Using 'send_message' function, send routing update to neighbors right away and reset periodic timer | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
-##### `update`
+##### update
 |          |                                   |                   |                   |                   |                   |
 | -------- | --------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `Update` | The link cost between two servers | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
-##### `packets`
+##### packets
 |           |                                                                                                                     |                   |                   |                   |                   |
 | --------- | ------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `packets` | Display number of distance vector (packets) this server has received sinc ethe last invocation of this information. | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[x] </li> |
 
-##### `disable`
+##### disable
 |           |                                                                                                         |                   |                   |                   |                   |
 | --------- | ------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `disable` | Disable the link to a given server. Doing this "closes" the connection to a given server with server-ID | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-##### `crash`
+##### crash
 |                        |                                                                                                |                   |                   |                   |                   |
 | ---------------------- | ---------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
 | `crash`                | Close all connections. This is to simulate server crashes. Close all connections on all links. | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `send_message_crash`   | send crash messages to all neighbors to alert                                                  | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `eliminateCrashServer` | When a server is crashed, it eliminates the server from it's routing table and topology        | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
-
-
-
-c
+##### exit
+|            |                                                                |                   |                   |                   |                   |
+| ---------- | -------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
+| `clean_up` | called when the server exits, closes selector and all sockets. | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
