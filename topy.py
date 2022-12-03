@@ -515,6 +515,9 @@ def menu(usr_input: str, state: Server_State) -> None:
                 print("error: failed to create listening socket")
                 exit(1)
 
+
+            state.mutex = threading.Lock()
+
             state.timer = threading.Timer(state.timeout_interval, per_update, [state, ''])
         
             state.timer.start()
