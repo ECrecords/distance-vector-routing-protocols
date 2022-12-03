@@ -45,7 +45,7 @@
  | `init_listr`        | used to create the listening socket.                                                                              | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `print_commands`    | print supported commands.                                                                                         | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `main`              | contains the runtime loop, sets up the event loop using a selector.                                               | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
- | `packets`  | Display number of distance vector (packets) this server has received sinc ethe last invocation of this information.        | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+ | `packets`  | Display number of distance vector (packets) this server has received sinc ethe last invocation of this information.        | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[x] </li> |
  | `disable`  | Disable the link to a given server. Doing this "closes" the connection to a given server with server-ID                    | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `crash`  | Close all connections. This is to simulate server crashes. Close all connections on all links.                               | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `send_message_crash`  | send crash messages to all neighbors to alert                                                                   | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
