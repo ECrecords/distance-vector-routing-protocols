@@ -25,7 +25,8 @@ class Server_State:
         self.routing_table      = None
         self.servers            = None
         self.neighbors          = None
-        self.packets            = None
+        self.crash              = 0
+        self.packets            = 0
         self.updatedIDs         = []
         self.failed_con         = {}
 
@@ -172,19 +173,46 @@ def disable(state: Server_State, id: str):
     # ex) disable 3
     #check if that id is really our neighbor
     # if so
-    dstServerID = id
-    state.routing_table[dstServerID]['cost'] = 'inf'
-    state.updatedIDs.append(dstServerID)
-    # remove serverid(ex: 3) from state.neighbors list
-    for item in state.neighbors:
-        if item[1] == dstServerID:
-            state.neighbors.remove(item)
+    dstServerID = id[1]
+    for i in state.neighbors:
+        if(dstServerID == i[1]):
+            state.routing_table[dstServerID]['cost'] = 'inf'
+            state.updatedIDs.append(dstServerID)
+            # remove serverid(ex: 3) from state.neighbors list
+            state.neighbors.remove(i)
 
-   
+def crash(state:Server_State):
+    # set all neighbors cost as 'inf',then remove all from state.neighbors
+    state.updatedIDs=[]
+    for i in state.neighbors:
+        state.routing_table[i[1]]['cost'] = 'inf'
+        state.updatedIDs.append(i[1])
+        
+    # inform neighbors to disable this server crashed
+    send_message_crash(state)
+    
+    # remove all connections from state.neighbors  
+    for i in state.neighbors[:]:
+        state.neighbors.remove(i)
+        
+    # display routing table    
+    display(state.routing_table)
 
-def crash():
-    pass
-
+# handle sending messages only after crush command
+def send_message_crash(state: Server_State):
+    # set crash flag as 1 to inform neighbors this is a crash command
+    state.crash = 1
+    message = formMessage(state)
+    for neighbor in state.neighbors:
+        for server in state.servers:
+            if server[0] == neighbor[1]:
+                neighborIP = server[1]
+                neighborPort = server[2]
+                send_message(state, message, neighborIP, neighborPort)
+                
+    # set crash flag as default 0 after we inform neightbors
+    state.crash = 0
+        
 def exit_func():
     pass
 
@@ -195,7 +223,7 @@ def formMessage(state: Server_State):
     payload = {}
     
     #create header message
-    header = { "header": { "n_update_fields": nFields, "server_ip": state.ip, "server_port": state.port } }
+    header = { "header": { "n_update_fields": nFields, "server_ip": state.ip, "server_port": state.port, "crash": state.crash} }
 
     #create payload message
     server_response_temp = []
@@ -312,18 +340,17 @@ def recv_message(state: Server_State, sock: socket.socket):
         state.sel.unregister(sock)
         sock.close()
         return
-    
     sender_id = None
     
     for server in state.servers:
-        id, ip, _ = server
-        if recv_payload['header']['server_ip'] == ip:
+        id, ip, port = server
+        if recv_payload['header']['server_ip'] == ip and recv_payload['header']['server_port'] == int(port):
             sender_id = id
             
     if sender_id is None:
         print("ERROR: RECEIVED A MESSAGE FROM UNKNOWN SERVER")
 
-    packets += 1    
+    state.packets += 1    
     print(f"RECEIVED A MESSAGE FROM SERVER {sender_id}")
     
     # print recv_payload to test the type and the structure
@@ -331,8 +358,19 @@ def recv_message(state: Server_State, sock: socket.socket):
     #print(recv_payload)
     
     # commented out since we don't update the route table immediately without bellman ford algorithm.
-    bellmanford(state, recv_payload, sender_id)
+    crash_flag = recv_payload['header']['crash']
     
+    # if this message is from a crush command
+    if(crash_flag == 1):
+        eliminateCrashServer(state, recv_payload, sender_id)
+    else:
+        bellmanford(state, recv_payload, sender_id)
+
+def eliminateCrashServer(state: Server_State, recv_payload, sender_id):
+    sender_id_input = ['disable',sender_id]
+    disable(state, sender_id_input)
+    display(state.routing_table)
+          
 # Calculates new routing table based on the new Distance Vector Received
 def bellmanford(state: Server_State, recv_payload, sender_id):
     # routingTable[serverID] = {'nexthop': nexthop, 'cost': cost}
@@ -344,6 +382,7 @@ def bellmanford(state: Server_State, recv_payload, sender_id):
             if route['id'] == dstID:
                 costFromSenderToDst = chkInf(route['cost'])
         newCost = costToSender + costFromSenderToDst
+        
         if newCost < myCost:
             temp = {'nexthop': sender_id, 'cost': newCost}
             state.routing_table[dstID].update(temp)
@@ -474,12 +513,11 @@ def menu(usr_input: str, state: Server_State) -> None:
         display(state.routing_table)
     
     elif "disable" in usr_input[0] and state.routing_table is not None:
-        update(state, usr_input)
+        disable(state, usr_input)
         
 
     elif "crash" in usr_input[0] and state.routing_table is not None:
-        #TODO exit program correctly
-        pass
+        crash(state)
 
     elif "exit" in usr_input[0]:
         #TODO update clean_up as needed
