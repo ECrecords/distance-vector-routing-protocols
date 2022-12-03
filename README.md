@@ -46,9 +46,9 @@
 | `init_listr`        | used to create the listening socket.                                            | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `recv_message`      | called when a connection in the selection has something to read.                | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 | `handle_connection` | called when a connection is attempting to connect through the listening socket. | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-| `formMessage`       | Create routing update message to be sent out to neighbors                       | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-| `send_message`      | send routing update message in JSON format to neighbors                         | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-| `bellmanford`       | Calculates new routing table based on the new Distance Vector Received          | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[X] </li> | <ul><li>[X] </li> |
+| `formMessage`       | Create routing update message to be sent out to neighbors                       | <ul><li>[X] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+| `send_message`      | send routing update message in JSON format to neighbors                         | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[x] </li> |
+| `bellmanford`       | Calculates new routing table based on the new Distance Vector Received          | <ul><li>[X] </li> | <ul><li>[ ] </li> | <ul><li>[X] </li> | <ul><li>[X] </li> |
 | `per_update`        | Handling Timer for periodic message exchange                                    | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
 
@@ -56,30 +56,30 @@
 ##### server
 |                    |                                                                                    |                   |                   |                   |                   |
 | ------------------ | ---------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
-| `server`           | Initial server function to get topology filename and updating time interval value. | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-| `createRouteTable` | create initial routing table using topology file.                                  | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-| `readTopFile`      | Read topology file to establish topology and initial routing table.                | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+| `server`           | Initial server function to get topology filename and updating time interval value. | <ul><li>[x] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+| `createRouteTable` | create initial routing table using topology file.                                  | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+| `readTopFile`      | Read topology file to establish topology and initial routing table.                | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
 
 ##### display
 |           |                                              |                   |                   |                   |                   |
 | --------- | -------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
-| `display` | display current routing table of the server. | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+| `display` | display current routing table of the server. | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
 ##### step
 |        |                                                                                                     |                   |                   |                   |                   |
 | ------ | --------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
-| `step` | Using 'send_message' function, send routing update to neighbors right away and reset periodic timer | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+| `step` | Using 'send_message' function, send routing update to neighbors right away and reset periodic timer | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
 ##### update
 |          |                                   |                   |                   |                   |                   |
 | -------- | --------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
-| `Update` | The link cost between two servers | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+| `Update` | The link cost between two servers | <ul><li>[X] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
 
 ##### packets
 |           |                                                                                                                     |                   |                   |                   |                   |
 | --------- | ------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
-| `packets` | Display number of distance vector (packets) this server has received sinc ethe last invocation of this information. | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[x] </li> |
+| `packets` | Display number of distance vector (packets) this server has received sinc ethe last invocation of this information. | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[x] </li> |
 
 ##### disable
 |           |                                                                                                         |                   |                   |                   |                   |
@@ -88,9 +88,9 @@
 ##### crash
 |                        |                                                                                                |                   |                   |                   |                   |
 | ---------------------- | ---------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
-| `crash`                | Close all connections. This is to simulate server crashes. Close all connections on all links. | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-| `send_message_crash`   | send crash messages to all neighbors to alert                                                  | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
-| `eliminateCrashServer` | When a server is crashed, it eliminates the server from it's routing table and topology        | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
+| `crash`                | Close all connections. This is to simulate server crashes. Close all connections on all links. | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> |
+| `send_message_crash`   | send crash messages to all neighbors to alert                                                  | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> |
+| `eliminateCrashServer` | When a server is crashed, it eliminates the server from it's routing table and topology        | <ul><li>[ ] </li> | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> |
 
 ##### exit
 |            |                                                                |                   |                   |                   |                   |
