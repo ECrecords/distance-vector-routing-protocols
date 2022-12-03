@@ -3,6 +3,7 @@ import sys, traceback
 import socket
 import selectors
 import json
+import threading
 
 from time import sleep
 from requests import get
@@ -16,6 +17,8 @@ FAILED_SEND_MAX = 3
 # used to hold needed data & structures 
 class Server_State:
     def __init__(self):
+        self.mutex : threading.Lock  = None
+        self.timer : threading.Timer = None
         self.sel                = None
         self.id                 = None
         self.ip                 = None
@@ -30,6 +33,22 @@ class Server_State:
         self.updatedIDs         = []
         self.failed_con         = {}
 
+# called upon the t
+def per_update(*args) -> None:
+    
+    # hand over control to fuction
+    args[0].mutex.acquire()
+    
+    print('periodic update initiated...')
+
+    step(args[0])
+    
+    # restart timer
+    args[0].timer = threading.Timer(args[0].timeout_interval, per_update, [args[0], ''])
+    args[0].timer.start()
+    
+    # release control
+    args[0].mutex.release()  
 
 # used to get public ip
 def get_ip() -> str:
@@ -496,6 +515,10 @@ def menu(usr_input: str, state: Server_State) -> None:
                 print("error: failed to create listening socket")
                 exit(1)
 
+            state.timer = threading.Timer(state.timeout_interval, per_update, [state, ''])
+        
+            state.timer.start()
+            
             # display routing table
             display(state.routing_table)
 
@@ -503,7 +526,21 @@ def menu(usr_input: str, state: Server_State) -> None:
         update(state, usr_input)
 
     elif "step" in usr_input[0] and state.routing_table is not None:
+        
+        # stop threads from accesing
+        state.mutex.acquire()
+        
+        #stop timer
+        state.timer.cancel()
+        
         step(state)
+        
+        state.timer = threading.Timer(state.timeout_interval, per_update, [state, ''])
+        
+        state.timer.start()
+        
+        # release 
+        state.mutex.release() 
 
     elif "packets" in usr_input[0] and state.routing_table is not None:
         packets(state)
