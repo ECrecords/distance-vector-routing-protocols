@@ -377,7 +377,7 @@ def bellmanford(state: Server_State, recv_payload, sender_id):
     for dstID in state.routing_table.keys():
         myCost = chkInf(state.routing_table[dstID]['cost'])
         costToSender = chkInf(state.routing_table[sender_id]['cost'])
-        costFromSenderToDst = ''
+        costFromSenderToDst = 0
         for route in recv_payload['payload']:
             if route['id'] == dstID:
                 costFromSenderToDst = chkInf(route['cost'])
