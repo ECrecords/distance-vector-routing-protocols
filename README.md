@@ -1,10 +1,11 @@
 # Comp429 distance-vector-routing-protocols
 - Group 2: Jacob Hagen, Bum Jun Cho, Hao Lu, Elvis Chino-Islas
 
-## Requirements to run the code
+## Requirements / installation to run the code
 - Python3
 - 4 linux machines (our test environments are configured with Amazon Linux 2 Kernel 5.10 AMI)
 - Make sure the machines can talk to each other (e.g. ping)
+  - pre-configured ports in the topology file must be opened (firewall configuration)
 - There are required external packages that need to be installed
   - provided in requirements.txt file.
   - command to install pakcages:
@@ -12,16 +13,20 @@
 
 ## How to run the program
 - python3 topy.py
-  - Depends on your configuration, python command may be 'python3' instead of 'python'
+  - Depends on your configuration, python command may be 'python' instead of 'python3'
+  - make sure you run Python3
 
-## Tasks
+## Tasks that are done
 - Prepared Devlopement & testing environment
   - Github, 4 x Amazon AWS EC2 instance
+  - Firewall configuration, connectivity testing (using ping and tcp connection)
 - Created a Readme & basic architecture of the program along with:
+  - Topology diagram
   - list of functions
   - work priorities
+  - meeting schedules
   
- ## Functions with Individual Contributions
+ ### Codes (Functions) with Individual Contributions
  | Function            | Description                                                                                                       | Cho               | Elvis             | Hao               | Jacob             |
  | ------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
  | `Server_State Class`| Contains the server's information including timer, id, ip, port, routing table, network topology, packets, etc    | <ul><li>[X] </li> | <ul><li>[x] </li> | <ul><li>[X] </li> | <ul><li>[X] </li> |
