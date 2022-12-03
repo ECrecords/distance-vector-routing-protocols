@@ -4,12 +4,7 @@ import socket
 import selectors
 import json
 import threading
-
-from time import sleep
-from requests import get
-
-# used for updating routing table periodicly
-#import schedule 
+from requests import get 
 
 #constant 
 FAILED_SEND_MAX = 3
