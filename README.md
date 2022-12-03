@@ -22,6 +22,7 @@
  ## Functions with Individual Contributions
  | Function            | Description                                                                                                       | Cho               | Elvis             | Hao               | Jacob             |
  | ------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
+ | `Server_State Class`              | Contains the server's information including timer, id, ip, port, routing table, network topology, packets, etc                                                                                     | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `menu`              | called when input is recived.                                                                                     | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `recv_message`      | called when a connection in the selection has something to read.                                                  | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
  | `get_ip`            | used to get ***this*** server's public ip.                                                                        | <ul><li>[ ] </li> | <ul><li>[x] </li> | <ul><li>[ ] </li> | <ul><li>[ ] </li> |
