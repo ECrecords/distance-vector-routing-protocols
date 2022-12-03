@@ -39,7 +39,7 @@ def per_update(*args) -> None:
     # hand over control to fuction
     args[0].mutex.acquire()
     
-    print('periodic update initiated...')
+    #print('periodic update initiated...')
 
     step(args[0])
     
@@ -561,8 +561,12 @@ def menu(usr_input: str, state: Server_State) -> None:
 
     elif "exit" in usr_input[0]:
         #TODO update clean_up as needed
+        state.mutex.acquire()
+        state.timer.cancel()
+        state.mutex.release()
+        
         clean_up(state)
-        exit()
+        sys.exit()
 
     elif state.routing_table is not None:
         print(f"'{' '.join(usr_input)}' is a invalid command")
