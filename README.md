@@ -48,11 +48,11 @@
  | `bellmanford`          | Calculates new routing table based on the new Distance Vector Received                                              | ☒   | ☐     | ☐   | ☒     |
  | `recv_message`         | called when a connection in the selection has something to read.                                                    | ☒   | ☒     | ☐   | ☐     |
  | `handle_connection`    | called when a connection is attempting to connect through the listening socket.                                     | ☐   | ☒     | ☐   | ☐     |
- | `send_message`         | send routing update message in JSON format to neighbors                                                             | ☒   | ☐     | ☐   | ☐     |
- | `formMessage`          | Create routing update message to be sent out to neighbors                                                           | ☒   | ☐     | ☐   | ☐     |
+ | `send_message`         | send routing update message in JSON format to neighbors                                                             | ☒   | ☒     | ☐   | ☐     |
+ | `formMessage`          | Create routing update message to be sent out to neighbors                                                           | ☒   | ☒     | ☐   | ☐     |
  | `packets`              | Display number of distance vector (packets) this server has received sinc ethe last invocation of this information. | ☒   | ☐     | ☐   | ☒     |
  | `disable`              | Disable the link to a given server. Doing this "closes" the connection to a given server with server-ID             | ☒   | ☐     | ☒   | ☐     |
- | `crash`                | Close all connections. This is to simulate server crashes. Close all connections on all links.                      | ☐   | ☐     | ☐   | ☒     |
+ | `crash`                | Close all connections. This is to simulate server crashes. Close all connections on all links.                      | ☐   | ☐     | ☒   | ☒     |
  | `send_message_crash`   | send crash messages to all neighbors to alert                                                                       | ☐   | ☐     | ☒   | ☐     |
  | `eliminateCrashServer` | When a server is crashed, it eliminates the server from it's routing table and topology                             | ☐   | ☐     | ☒   | ☐     |
  | `clean_up`             | called when the server exits, closes selector and all sockets.                                                      | ☐   | ☒     | ☐   | ☐     |
