@@ -44,7 +44,7 @@
  | `createRouteTable`     | create initial routing table using topology file.                                                                   | ☒   | ☒     | ☐   | ☐     |
  | `init_listr`           | used to create the listening socket.                                                                                | ☐   | ☒     | ☐   | ☐     |
  | `Update`               | The link cost between two servers                                                                                   | ☒   | ☐     | ☐   | ☐     |
- | `step`                 | Using 'send_message' function, send routing update to neighbors right away and reset periodic timer                 | ☐   | ☐     | ☐   | ☐     |
+ | `step`                 | Using 'send_message' function, send routing update to neighbors right away and reset periodic timer                 | ☒   | ☐     | ☐   | ☐     |
  | `bellmanford`          | Calculates new routing table based on the new Distance Vector Received                                              | ☒   | ☐     | ☐   | ☒     |
  | `recv_message`         | called when a connection in the selection has something to read.                                                    | ☒   | ☒     | ☐   | ☐     |
  | `handle_connection`    | called when a connection is attempting to connect through the listening socket.                                     | ☐   | ☒     | ☐   | ☐     |
