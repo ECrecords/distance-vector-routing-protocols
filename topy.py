@@ -369,7 +369,7 @@ def recv_message(state: Server_State, sock: socket.socket):
     
     # print recv_payload to test the type and the structure
     #print(type(recv_payload))
-    print(recv_payload)
+    #print(recv_payload)
     
     # commented out since we don't update the route table immediately without bellman ford algorithm.
     crash_flag = recv_payload['header']['crash']
