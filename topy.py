@@ -409,6 +409,7 @@ for dstID in state.routing_table.keys():
 
     for route in recv_payload['payload']:
         if route['id'] == state.id:
+            if route['cost'] != state.routing_table[sender_id]['cost']:
                 state.routing_table[sender_id]['cost'] = route['cost']
                 state.updatedIDs.append(sender_id)
         else:
