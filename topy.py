@@ -388,18 +388,41 @@ def eliminateCrashServer(state: Server_State, recv_payload, sender_id):
 # Calculates new routing table based on the new Distance Vector Received
 def bellmanford(state: Server_State, recv_payload, sender_id):
     # routingTable[serverID] = {'nexthop': nexthop, 'cost': cost}
-    for dstID in state.routing_table.keys():
+    '''    
+for dstID in state.routing_table.keys():
         myCost = chkInf(state.routing_table[dstID]['cost'])
         costToSender = chkInf(state.routing_table[sender_id]['cost'])
         costFromSenderToDst = 0
         for route in recv_payload['payload']:
-            if route['id'] == dstID:
-                costFromSenderToDst = chkInf(route['cost'])
-        newCost = costToSender + costFromSenderToDst
+            if route['id'] == state.id:
+                state.routing_table[sender_id]['cost'] = route['cost']
+                state.updatedIDs.append(sender_id)
+            else:
+                if route['id'] == dstID:
+                    costFromSenderToDst = chkInf(route['cost'])
+            newCost = costToSender + costFromSenderToDst
         
         if newCost < myCost:
             temp = {'nexthop': sender_id, 'cost': newCost}
             state.routing_table[dstID].update(temp)
+    '''
+
+    for route in recv_payload['payload']:
+        if route['id'] == state.id:
+                state.routing_table[sender_id]['cost'] = route['cost']
+                state.updatedIDs.append(sender_id)
+        else:
+            for dstID in state.routing_table.keys():                
+                if route['id'] == dstID:
+                    myCost = chkInf(state.routing_table[dstID]['cost'])
+                    costToSender = chkInf(state.routing_table[sender_id]['cost'])
+                    costFromSenderToDst = chkInf(route['cost'])
+                    newCost = costToSender + costFromSenderToDst
+        
+                    if newCost < myCost:
+                        temp = {'nexthop': sender_id, 'cost': newCost}
+                        state.routing_table[dstID].update(temp)
+                        state.updatedIDs.append(dstID)
 
 
 # check if cost is infinity
